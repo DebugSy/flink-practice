@@ -10,16 +10,16 @@ import javax.annotation.Nullable;
  */
 public class TimeLagWatermarkGenerator implements AssignerWithPeriodicWatermarks<MyEvent> {
 
-	private final long maxTimeLag = 5000;
+  private final long maxTimeLag = 5000;
 
-	@Nullable
-	@Override
-	public Watermark getCurrentWatermark() {
-		return new Watermark(System.currentTimeMillis() - maxTimeLag);
-	}
+  @Nullable
+  @Override
+  public Watermark getCurrentWatermark() {
+    return new Watermark(System.currentTimeMillis() - maxTimeLag);
+  }
 
-	@Override
-	public long extractTimestamp(MyEvent element, long previousElementTimestamp) {
-		return element.getTimestamp();
-	}
+  @Override
+  public long extractTimestamp(MyEvent element, long previousElementTimestamp) {
+    return element.getTimestamp();
+  }
 }

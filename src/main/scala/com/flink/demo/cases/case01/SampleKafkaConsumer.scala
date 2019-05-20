@@ -1,12 +1,11 @@
 package com.flink.demo.cases.case01
 
 
-import java.util.Arrays
-import java.util.List
-import java.util.Properties
-import collection.JavaConversions._
+import java.util.{Arrays, List, Properties}
 
 import org.apache.kafka.clients.consumer.{ConsumerRecord, ConsumerRecords, KafkaConsumer}
+
+import scala.collection.JavaConversions._
 
 /**
   * Created by DebugSy on 2018/6/8.
@@ -15,10 +14,11 @@ class SampleKafkaConsumer(bootstrap: String, topics: List[String]) {
 
   var kafkaConsumer: KafkaConsumer[String, String] = _
 
-  private[this]  def init(): Unit = {
+  private[this] def init(): Unit = {
     val props = configKafka()
     kafkaConsumer = new KafkaConsumer[String, String](props)
   }
+
   init()
 
   private[this] def configKafka(): Properties = {
@@ -46,7 +46,7 @@ class SampleKafkaConsumer(bootstrap: String, topics: List[String]) {
 
 }
 
-object SampleKafkaConsumer{
+object SampleKafkaConsumer {
 
   def main(args: Array[String]): Unit = {
     val kafkaConsumer = new SampleKafkaConsumer("localhost:9092", Arrays.asList("shiy01"))

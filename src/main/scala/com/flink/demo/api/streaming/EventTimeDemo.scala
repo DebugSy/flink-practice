@@ -1,6 +1,5 @@
 package com.flink.demo.api.streaming
 
-import com.flink.demo.SocketWindowWordCount.WordWithCount
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.scala.{StreamExecutionEnvironment, _}

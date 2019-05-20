@@ -9,20 +9,20 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
  */
 public class FlinkDemo {
 
-	private final StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironment();
+  private final StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironment();
 
-	public void readFile(String path) throws Exception {
-		DataStream<String> input = env.readTextFile(path);
-		DataStream<Integer> parsed = input.map(new MapFunction<String, Integer>() {
-			public Integer map(String value) throws Exception {
-				return Integer.parseInt(value);
-			}
-		});
-		parsed.print();
-		parsed.writeAsText(path+".txt");
-		env.execute("read text file.");
+  public void readFile(String path) throws Exception {
+    DataStream<String> input = env.readTextFile(path);
+    DataStream<Integer> parsed = input.map(new MapFunction<String, Integer>() {
+      public Integer map(String value) throws Exception {
+        return Integer.parseInt(value);
+      }
+    });
+    parsed.print();
+    parsed.writeAsText(path + ".txt");
+    env.execute("read text file.");
 
-	}
+  }
 
 
 }

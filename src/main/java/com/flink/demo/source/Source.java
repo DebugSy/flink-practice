@@ -7,6 +7,6 @@ import org.apache.flink.streaming.api.datastream.DataStreamSource;
  */
 public interface Source {
 
-	DataStreamSource read();
+  DataStreamSource read();
 
 }

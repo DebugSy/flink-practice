@@ -1,7 +1,7 @@
 package com.flink.demo.socket
 
 import java.io.DataOutputStream
-import java.net.{ServerSocket, Socket}
+import java.net.ServerSocket
 
 /**
   * Created by DebugSy on 2018/5/31.
@@ -15,22 +15,21 @@ object SocketPruducer {
     println("after accept....")
     val out = new DataOutputStream(socket.getOutputStream)
     var n = 0
-    while (true){
+    while (true) {
       Thread.sleep(5000)
       var msg = "a " + System.currentTimeMillis()
-      print("msg : " + msg+"\n")
-      out.writeUTF(msg+"\n")
-      if (n == 5){
-        out.writeUTF(msg+"\n")
+      print("msg : " + msg + "\n")
+      out.writeUTF(msg + "\n")
+      if (n == 5) {
+        out.writeUTF(msg + "\n")
         msg = "b " + (System.currentTimeMillis() - 6000)
-        print("msg : " + msg+"\n")
-        out.writeUTF(msg+"\n")
+        print("msg : " + msg + "\n")
+        out.writeUTF(msg + "\n")
       }
       out.flush()
-      n+=1
+      n += 1
     }
   }
-
 
 
 }

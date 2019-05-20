@@ -6,11 +6,11 @@ import org.apache.flink.api.scala.createTypeInformation
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.util.Collector
 import org.slf4j.LoggerFactory
-import org.slf4j.LoggerFactory
+
 /**
   * Created by DebugSy on 2018/6/12.
   */
-class CountWindowAverage extends RichFlatMapFunction[(Long, Long), (Long, Long)]{
+class CountWindowAverage extends RichFlatMapFunction[(Long, Long), (Long, Long)] {
 
   private var sum: ValueState[(Long, Long)] = _
 
@@ -29,7 +29,7 @@ class CountWindowAverage extends RichFlatMapFunction[(Long, Long), (Long, Long)]
 
     sum.update(newSum)
 
-    if (newSum._1 >= 2){
+    if (newSum._1 >= 2) {
       out.collect((value._1, newSum._2 / newSum._1))
       sum.clear()
     }

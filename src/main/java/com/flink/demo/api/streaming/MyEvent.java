@@ -5,43 +5,43 @@ package com.flink.demo.api.streaming;
  */
 public class MyEvent {
 
-	public int id;
+  public int id;
 
-	public String name;
+  public String name;
 
-	public int age;
+  public int age;
 
-	public long timestamp;
+  public long timestamp;
 
-	public int getId() {
-		return id;
-	}
+  public int getId() {
+    return id;
+  }
 
-	public void setId(int id) {
-		this.id = id;
-	}
+  public void setId(int id) {
+    this.id = id;
+  }
 
-	public String getName() {
-		return name;
-	}
+  public String getName() {
+    return name;
+  }
 
-	public void setName(String name) {
-		this.name = name;
-	}
+  public void setName(String name) {
+    this.name = name;
+  }
 
-	public int getAge() {
-		return age;
-	}
+  public int getAge() {
+    return age;
+  }
 
-	public void setAge(int age) {
-		this.age = age;
-	}
+  public void setAge(int age) {
+    this.age = age;
+  }
 
-	public long getTimestamp() {
-		return timestamp;
-	}
+  public long getTimestamp() {
+    return timestamp;
+  }
 
-	public void setTimestamp(long timestamp) {
-		this.timestamp = timestamp;
-	}
+  public void setTimestamp(long timestamp) {
+    this.timestamp = timestamp;
+  }
 }

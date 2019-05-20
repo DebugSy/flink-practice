@@ -6,7 +6,7 @@ import org.apache.flink.streaming.api.watermark.Watermark
 /**
   * Created by DebugSy on 2018/5/31.
   */
-class TimestampExtractor extends AssignerWithPeriodicWatermarks[String]{
+class TimestampExtractor extends AssignerWithPeriodicWatermarks[String] {
   override def getCurrentWatermark: Watermark = new Watermark(System.currentTimeMillis())
 
   override def extractTimestamp(element: String, previousElementTimestamp: Long): Long = {

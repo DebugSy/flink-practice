@@ -13,7 +13,7 @@ object SocketConsumer {
     val socket = new Socket("localhost", 9002)
     val in = socket.getInputStream
     val din = new DataInputStream(in)
-    while (true){
+    while (true) {
       val msg = din.readUTF()
       println(msg)
     }

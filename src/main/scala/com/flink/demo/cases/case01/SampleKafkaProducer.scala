@@ -4,14 +4,13 @@ import java.text.SimpleDateFormat
 import java.util.{Date, Properties, Random}
 
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
-import org.apache.sling.commons.json.JSONObject
 
 /**
   * Created by DebugSy on 2018/6/7.
   */
 class SampleKafkaProducer {
 
-  var kafkaProducer: KafkaProducer[String,String] = _
+  var kafkaProducer: KafkaProducer[String, String] = _
 
   private val dataFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
 
@@ -19,7 +18,7 @@ class SampleKafkaProducer {
 
   def init(bootstrap: String): Unit = {
     val properties = configKafka(bootstrap)
-    kafkaProducer = new KafkaProducer[String,String](properties)
+    kafkaProducer = new KafkaProducer[String, String](properties)
   }
 
   private def configKafka(bootstrap: String): Properties = {
@@ -37,7 +36,7 @@ class SampleKafkaProducer {
 
   def produce(topic: String) = {
     val msg = prepareMessage()
-    val producerRecord  = new ProducerRecord[String, String](topic, msg)
+    val producerRecord = new ProducerRecord[String, String](topic, msg)
     val outDate = dataFormat.format(new Date()).toString
     println(s"$outDate : $msg")
     kafkaProducer.send(producerRecord)
@@ -62,7 +61,7 @@ class SampleKafkaProducer {
       "6b67c8c700427dee7552f81f3228c927", "a95f22eabc4fd4b580c011a3161a9d9d")
 
     pointer = pointer + 1
-    if(pointer >= users.length) {
+    if (pointer >= users.length) {
       pointer = 0
       users(pointer)
     } else {
@@ -72,12 +71,12 @@ class SampleKafkaProducer {
 
 }
 
-object SampleKafkaProducer{
+object SampleKafkaProducer {
 
   def main(args: Array[String]): Unit = {
     val producer = new SampleKafkaProducer
     producer.init("localhost:9092")
-    while (true){
+    while (true) {
       producer.produce("shiy01")
       Thread.sleep(1000)
     }

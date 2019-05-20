@@ -9,7 +9,7 @@
     <artifactId>flink-demo</artifactId>
 
     <properties>
-        <flink.version>1.3.2</flink.version>
+        <flink.version>1.7.2</flink.version>
         <scala.version>2.11</scala.version>
     </properties>
 
@@ -149,7 +149,7 @@
             </plugin>
 
             <plugin>
-                <artifactId> maven-assembly-plugin </artifactId>
+                <artifactId>maven-assembly-plugin</artifactId>
                 <configuration>
                     <descriptorRefs>
                         <descriptorRef>jar-with-dependencies</descriptorRef>

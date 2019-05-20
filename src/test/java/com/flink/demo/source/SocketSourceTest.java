@@ -9,21 +9,21 @@ import org.junit.Test;
  */
 public class SocketSourceTest {
 
-	private StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironment();
+  private StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironment();
 
-	private String host = "localhost";
+  private String host = "localhost";
 
-	private int port = 9001;
+  private int port = 9001;
 
-	private SocketSource socketSource = new SocketSource(env, host, port);
+  private SocketSource socketSource = new SocketSource(env, host, port);
 
-	@Test
-	public void socketSource() throws Exception {
-		DataStreamSource streamSource = socketSource.read();
-		streamSource.print();
+  @Test
+  public void socketSource() throws Exception {
+    DataStreamSource streamSource = socketSource.read();
+    streamSource.print();
 
-		System.out.println(env.getExecutionPlan());
-		env.execute("socket source");
-	}
+    System.out.println(env.getExecutionPlan());
+    env.execute("socket source");
+  }
 
 }

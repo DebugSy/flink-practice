@@ -2,7 +2,6 @@ package com.flink.demo.cases.case01
 
 import java.util.Properties
 
-import com.fasterxml.jackson.databind.node.ObjectNode
 import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment, _}
 import org.apache.flink.streaming.api.windowing.time.Time
@@ -27,7 +26,7 @@ class FlinkKafkaSource(bootstrap: String, topic: String) {
     props
   }
 
-  def run(): Unit ={
+  def run(): Unit = {
     env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
 
     val source: DataStream[ObjectNode] = env.addSource(kafkaSource)
@@ -36,7 +35,7 @@ class FlinkKafkaSource(bootstrap: String, topic: String) {
     val counts: DataStream[(String, Int)] = source.map(record => Tuple2(record.get("uid").asText(), record.get("click_count").asInt()))
       .keyBy(0)
       .timeWindow(Time.seconds(20), Time.seconds(10))
-        .sum(1)
+      .sum(1)
 
     counts.printToErr();
 
@@ -45,7 +44,7 @@ class FlinkKafkaSource(bootstrap: String, topic: String) {
 
 }
 
-object FlinkKafkaSource{
+object FlinkKafkaSource {
 
   def main(args: Array[String]): Unit = {
     val flinkKafka = new FlinkKafkaSource("localhost:9092", "shiy01")

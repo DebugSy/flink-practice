@@ -2,15 +2,13 @@ package com.flink.demo.cases.case02
 
 import java.util.Properties
 
-import com.fasterxml.jackson.databind.node.ObjectNode
 import com.flink.demo.cases.case01.KafkaEventTimeStampExtractor
 import org.apache.flink.runtime.state.filesystem.FsStateBackend
 import org.apache.flink.streaming.api.CheckpointingMode
-import org.apache.flink.streaming.api.environment.CheckpointConfig.ExternalizedCheckpointCleanup
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer010
-import org.apache.flink.streaming.util.serialization.{JSONDeserializationSchema, JSONKeyValueDeserializationSchema}
+import org.apache.flink.streaming.util.serialization.JSONDeserializationSchema
 
 /**
   * Created by DebugSy on 2018/6/11.
@@ -25,7 +23,7 @@ object CheckPointingCase {
     env.getCheckpointConfig.setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE)
     env.setStateBackend(new FsStateBackend("file:///E:/tmp/flink/StateBackend"))
 
-//    env.getCheckpointConfig.enableExternalizedCheckpoints(ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION)
+    //    env.getCheckpointConfig.enableExternalizedCheckpoints(ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION)
 
     val props = new Properties()
     props.setProperty("bootstrap.servers", "localhost:9092")

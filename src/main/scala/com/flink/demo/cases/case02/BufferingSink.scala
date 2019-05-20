@@ -8,13 +8,13 @@ import org.apache.flink.runtime.state.{FunctionInitializationContext, FunctionSn
 import org.apache.flink.streaming.api.checkpoint.CheckpointedFunction
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 
-import scala.collection.mutable.ListBuffer
 import scala.collection.JavaConversions._
+import scala.collection.mutable.ListBuffer
 
 /**
   * Created by DebugSy on 2018/6/13.
   */
-class BufferingSink(threshold: Int = 0) extends SinkFunction[(String, Int)] with CheckpointedFunction{
+class BufferingSink(threshold: Int = 0) extends SinkFunction[(String, Int)] with CheckpointedFunction {
 
   @transient
   private var checkpointedState: ListState[(String, Int)] = _
@@ -31,8 +31,8 @@ class BufferingSink(threshold: Int = 0) extends SinkFunction[(String, Int)] with
     val str = bufferedElements.toString()
     println(s"bufferedElements : $str")
 
-    if (bufferedElements.size == threshold){
-      for (element <- bufferedElements){
+    if (bufferedElements.size == threshold) {
+      for (element <- bufferedElements) {
         //send it to the sink
         writer.write(element.toString())
         writer.flush()
@@ -44,7 +44,7 @@ class BufferingSink(threshold: Int = 0) extends SinkFunction[(String, Int)] with
 
   override def snapshotState(context: FunctionSnapshotContext): Unit = {
     checkpointedState.clear()
-    for (element <- bufferedElements){
+    for (element <- bufferedElements) {
       checkpointedState.add(element)
     }
   }
@@ -57,8 +57,8 @@ class BufferingSink(threshold: Int = 0) extends SinkFunction[(String, Int)] with
 
     checkpointedState = context.getOperatorStateStore.getListState(descriptor)
 
-    if (context.isRestored){
-      for (element <- checkpointedState.get()){
+    if (context.isRestored) {
+      for (element <- checkpointedState.get()) {
         bufferedElements += element
       }
     }

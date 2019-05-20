@@ -8,21 +8,21 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
  */
 public class SocketSource implements Source {
 
-	private StreamExecutionEnvironment env;
+  private StreamExecutionEnvironment env;
 
-	private String host;
+  private String host;
 
-	private int port;
+  private int port;
 
-	public SocketSource(StreamExecutionEnvironment env, String host, int port) {
-		this.env = env;
-		this.host = host;
-		this.port = port;
-	}
+  public SocketSource(StreamExecutionEnvironment env, String host, int port) {
+    this.env = env;
+    this.host = host;
+    this.port = port;
+  }
 
-	public DataStreamSource read() {
-		DataStreamSource<String> streamSource = env.socketTextStream(host, port);
-		return streamSource;
-	}
+  public DataStreamSource read() {
+    DataStreamSource<String> streamSource = env.socketTextStream(host, port);
+    return streamSource;
+  }
 
 }

@@ -12,36 +12,36 @@ import java.util.List;
  */
 public class BroadcastDemo {
 
-	public static void main(String[] args) {
+  public static void main(String[] args) {
 
-		ExecutionEnvironment env = ExecutionEnvironment.createLocalEnvironment();
+    ExecutionEnvironment env = ExecutionEnvironment.createLocalEnvironment();
 
-		final DataSet<Integer> toBroadcast = env.fromElements(1, 2, 3);
-		DataSet<String> data = env.fromElements("India", "UAS", "UK").map(new RichMapFunction<String, String>() {
+    final DataSet<Integer> toBroadcast = env.fromElements(1, 2, 3);
+    DataSet<String> data = env.fromElements("India", "UAS", "UK").map(new RichMapFunction<String, String>() {
 
-			private List<Integer> toBroadcast;
+      private List<Integer> toBroadcast;
 
-			@Override
-			public void open(Configuration parameters) throws Exception {
-				this.toBroadcast = getRuntimeContext().getBroadcastVariable("country");
-			}
+      @Override
+      public void open(Configuration parameters) throws Exception {
+        this.toBroadcast = getRuntimeContext().getBroadcastVariable("country");
+      }
 
-			@Override
-			public String map(String s) throws Exception {
-				int sum = 0;
-				for (int a : toBroadcast){
-					sum += a;
-				}
-				return s.toUpperCase() + sum;
-			}
-		}).withBroadcastSet(toBroadcast, "country");
+      @Override
+      public String map(String s) throws Exception {
+        int sum = 0;
+        for (int a : toBroadcast) {
+          sum += a;
+        }
+        return s.toUpperCase() + sum;
+      }
+    }).withBroadcastSet(toBroadcast, "country");
 
-		try {
-			data.print();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+    try {
+      data.print();
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
 
-	}
+  }
 
 }
