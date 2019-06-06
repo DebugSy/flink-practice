@@ -7,7 +7,7 @@ import org.apache.flink.streaming.api.watermark.Watermark
 /**
   * Created by DebugSy on 2018/6/8.
   */
-class KafkaEventTimeStampExtractor extends AssignerWithPeriodicWatermarks[ObjectNode] {
+class KafkaEventTimeStampExtractor extends AssignerWithPeriodicWatermarks[String] {
   override def getCurrentWatermark: Watermark = new Watermark(System.currentTimeMillis())
 
   //  override def extractTimestamp(element: ObjectNode, previousElementTimestamp: Long): Long = {
@@ -15,10 +15,10 @@ class KafkaEventTimeStampExtractor extends AssignerWithPeriodicWatermarks[Object
   //    eventTime.asLong()
   //}
 
-  override def extractTimestamp(element: ObjectNode, previousElementTimestamp: Long): Long = {
+  override def extractTimestamp(element: String, previousElementTimestamp: Long): Long = {
     //val jsonObject = new TextNode(element)
     //jsonObject.get("event_time").asLong()
     //    System.currentTimeMillis()
-    element.get("event_time").asLong()
+    1
   }
 }

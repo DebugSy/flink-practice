@@ -43,13 +43,14 @@ class SampleKafkaProducer {
   }
 
   def prepareMessage(): String = {
-    val random = new Random()
-    val event = new JSONObject()
-    event.put("uid", getUserId)
-      .put("event_time", System.currentTimeMillis().toString)
-      .put("os_type", "Android")
-      .put("click_count", random.nextInt(10))
-    event.toString
+//    val random = new Random()
+//    val event = new JSONObject()
+//    event.put("uid", getUserId)
+//      .put("event_time", System.currentTimeMillis().toString)
+//      .put("os_type", "Android")
+//      .put("click_count", random.nextInt(10))
+//    event.toString
+    ""
   }
 
   private def getUserId(): String = {
