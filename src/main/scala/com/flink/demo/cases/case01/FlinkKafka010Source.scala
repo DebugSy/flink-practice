@@ -4,7 +4,9 @@ import java.util.Properties
 
 import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.streaming.api.TimeCharacteristic
+import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment, _}
+import org.apache.flink.streaming.api.windowing.assigners.TumblingProcessingTimeWindows
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer010
 
@@ -40,7 +42,9 @@ object FlinkKafka010Source {
     env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)//设置
 
     val source: DataStream[String] = env.addSource(kafkaSource)
-    source.assignAscendingTimestamps(_.split(" ")(0).toLong)
+    source.assignTimestampsAndWatermarks(new BoundedOutOfOrdernessTimestampExtractor[String](Time.seconds(5)) {
+      override def extractTimestamp(element: String): Long = element.split(" ")(0).toLong
+    })
 
     val counts: DataStream[(String, Int)] = source
       .filter(record => !record.isEmpty)
@@ -50,7 +54,7 @@ object FlinkKafka010Source {
         Tuple2(strs(1), strs(2).toInt)
       })
       .keyBy(0)
-      .timeWindow(Time.seconds(10), Time.seconds(5))
+      .window(TumblingProcessingTimeWindows.of(Time.seconds(5)))
       .sum(1)
 
     counts.printToErr();
