@@ -1,14 +1,17 @@
 package com.flink.demo.cases.case02;
 
+import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
+import org.apache.flink.streaming.api.datastream.KeyedStream;
+import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.streaming.api.functions.source.RichSourceFunction;
-import org.apache.flink.streaming.api.watermark.Watermark;
+import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor;
 import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
@@ -35,7 +38,14 @@ public class FlinkSqlTraining {
 
         DataStreamSource<Tuple3<String, String, Timestamp>> sourceStream = env.addSource(new DataSource());
 
-        tableEnv.registerDataStream("clicks", sourceStream, "username,url,clickTime,rowtime.rowtime");
+        KeyedStream<Tuple3<String, String, Timestamp>, Tuple> keyedStream = sourceStream.assignTimestampsAndWatermarks(new AscendingTimestampExtractor<Tuple3<String, String, Timestamp>>() {
+            @Override
+            public long extractAscendingTimestamp(Tuple3<String, String, Timestamp> element) {
+                return element.f2.getTime();
+            }
+        }).keyBy(0);
+
+        tableEnv.registerDataStream("clicks", keyedStream, "username,url,clickTime,rowtime.rowtime");
 
         Table sqlQuery = tableEnv.sqlQuery("select " +
                 "username, " +
@@ -74,8 +84,9 @@ public class FlinkSqlTraining {
                 String url = "http://127.0.0.1/api/" + (char) ('H' + random.nextInt(4));
                 Tuple3<String, String, Timestamp> tuple3 = new Tuple3<>(username, url, clickTime);
                 logger.info("emit -> {}", tuple3);
-                ctx.collectWithTimestamp(tuple3, clickTime.getTime());
-                ctx.emitWatermark(new Watermark(clickTime.getTime()));
+//                ctx.collectWithTimestamp(tuple3, clickTime.getTime());
+//                ctx.emitWatermark(new Watermark(clickTime.getTime()));
+                ctx.collect(tuple3);
             }
         }
 
