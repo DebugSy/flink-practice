@@ -1,5 +1,6 @@
 package com.flink.demo.cases.case02;
 
+import com.flink.demo.cases.common.datasource.UrlClickDataSource;
 import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
@@ -7,7 +8,6 @@ import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.KeyedStream;
-import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.streaming.api.functions.source.RichSourceFunction;
@@ -24,10 +24,36 @@ import java.util.Random;
 
 /**
  * Created by DebugSy on 2019/7/10.
+ *
+ * java case 02
+ * Flink SQL 训练 - 聚合函数训练
+ * TUMBLE 滑动窗口
+ * HOP 滚动窗口
+ *
  */
-public class FlinkSqlTraining {
+public class FlinkSqlTraining_Agg {
 
-    private static final Logger logger = LoggerFactory.getLogger(FlinkSqlTraining.class);
+    private static final Logger logger = LoggerFactory.getLogger(FlinkSqlTraining_Agg.class);
+
+    private static String fields = "username,url,clickTime,rowtime.rowtime";
+
+    private static String tumbleWindowSql = "select username, count(*) as cnt, " +
+            "TUMBLE_START(rowtime, INTERVAL '10' SECOND) as window_start, " +
+            "TUMBLE_END(rowtime, INTERVAL '10' SECOND) as window_end " +
+            "from clicks " +
+            "group by username, " +
+            "TUMBLE(rowtime, INTERVAL '10' SECOND)";
+
+    private static String hopWindowSql = "select username, count(*) as cnt, " +
+            "HOP_ROWTIME(rowtime, INTERVAL '5' SECOND, INTERVAL '10' SECOND) as window_rowtime, " +
+            "HOP_START(rowtime, INTERVAL '5' SECOND, INTERVAL '10' SECOND) as window_start, " +
+            "HOP_END(rowtime, INTERVAL '5' SECOND, INTERVAL '10' SECOND) as window_end " +
+            "from clicks " +
+            "where url like '%/api/H%'" +
+            "group by username, " +
+            "HOP(rowtime, INTERVAL '5' SECOND, INTERVAL '10' SECOND)";
+
+    private static String sessionWindowSql = "";
 
     public static void main(String[] args) throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
@@ -36,7 +62,7 @@ public class FlinkSqlTraining {
 
         StreamTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(env);
 
-        DataStreamSource<Tuple3<String, String, Timestamp>> sourceStream = env.addSource(new DataSource());
+        DataStreamSource<Tuple3<String, String, Timestamp>> sourceStream = env.addSource(new UrlClickDataSource());
 
         KeyedStream<Tuple3<String, String, Timestamp>, Tuple> keyedStream = sourceStream.assignTimestampsAndWatermarks(new AscendingTimestampExtractor<Tuple3<String, String, Timestamp>>() {
             @Override
@@ -45,16 +71,10 @@ public class FlinkSqlTraining {
             }
         }).keyBy(0);
 
-        tableEnv.registerDataStream("clicks", keyedStream, "username,url,clickTime,rowtime.rowtime");
+        tableEnv.registerDataStream("clicks", keyedStream, fields);
 
-        Table sqlQuery = tableEnv.sqlQuery("select " +
-                "username, " +
-                "count(*) as cnt, " +
-                "TUMBLE_START(rowtime, INTERVAL '10' SECOND) as window_start, " +
-                "TUMBLE_END(rowtime, INTERVAL '10' SECOND) as window_end " +
-                "from clicks " +
-                "group by username, " +
-                "TUMBLE(rowtime, INTERVAL '10' SECOND)");
+//        Table sqlQuery = tableEnv.sqlQuery(tumbleWindowSql);
+        Table sqlQuery = tableEnv.sqlQuery(hopWindowSql);
 
         DataStream<Tuple2<Boolean, Row>> sinkStream = tableEnv.toRetractStream(sqlQuery, Row.class);
         sinkStream.addSink(new SinkFunction<Tuple2<Boolean, Row>>() {
@@ -66,35 +86,6 @@ public class FlinkSqlTraining {
 
 
         env.execute("Flink SQL Training");
-    }
-
-    static class DataSource extends RichSourceFunction<Tuple3<String, String, Timestamp>> {
-
-        private volatile boolean running = true;
-
-        @Override
-        public void run(SourceContext<Tuple3<String, String, Timestamp>> ctx) throws Exception {
-            Random random = new Random(System.currentTimeMillis());
-            while (running) {
-                int indexOfThisSubtask = getRuntimeContext().getIndexOfThisSubtask();
-                logger.info("The index of the parallel subtask is {}", indexOfThisSubtask);
-                Thread.sleep((indexOfThisSubtask + 1) * 1000);
-                String username = "用户" + (char) ('A' + random.nextInt(5));
-                Timestamp clickTime = new Timestamp(System.currentTimeMillis());
-                String url = "http://127.0.0.1/api/" + (char) ('H' + random.nextInt(4));
-                Tuple3<String, String, Timestamp> tuple3 = new Tuple3<>(username, url, clickTime);
-                logger.info("emit -> {}", tuple3);
-//                ctx.collectWithTimestamp(tuple3, clickTime.getTime());
-//                ctx.emitWatermark(new Watermark(clickTime.getTime()));
-                ctx.collect(tuple3);
-            }
-        }
-
-        @Override
-        public void cancel() {
-            running = false;
-        }
-
     }
 
 }
