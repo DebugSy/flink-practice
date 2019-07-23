@@ -53,7 +53,7 @@ public class FlinkSqlTraining_Join {
 
     public static void main(String[] args) throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        env.setParallelism(4);
+        env.setParallelism(1);
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
         StreamTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(env);
