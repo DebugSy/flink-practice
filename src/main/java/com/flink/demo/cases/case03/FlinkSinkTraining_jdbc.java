@@ -27,13 +27,11 @@ public class FlinkSinkTraining_jdbc {
 
     private static String userFields = "userId,username,address,activityTime";
 
-    private static String[] fieldNames = {"userId", "username", "address", "activityTime"};
+    private static String[] fieldNames = {"username", "count"};
 
     private static TypeInformation[] typeInfos = {
-            TypeInformation.of(Integer.class),
             TypeInformation.of(String.class),
-            TypeInformation.of(String.class),
-            TypeInformation.of(Timestamp.class)
+            TypeInformation.of(Long.class),
     };
 
     public static void main(String[] args) throws Exception {
@@ -45,9 +43,10 @@ public class FlinkSinkTraining_jdbc {
 
         DataStreamSource<Tuple4<Integer, String, String, Timestamp>> userStream = env.addSource(new UserDataSource());
         tableEnv.registerDataStream("users", userStream, userFields);
-        tableEnv.registerTableSink("jdb1c_sink", new AppendSink_jdbc(fieldNames, typeInfos));
+//        tableEnv.registerTableSink("jdb1c_sink", new AppendSink_jdbc(fieldNames, typeInfos));
+        tableEnv.registerTableSink("jdb1c_sink", fieldNames, typeInfos, new RetractSink_jdbc());
 
-        tableEnv.sqlUpdate("insert into jdb1c_sink SELECT * FROM users");
+        tableEnv.sqlUpdate("insert into jdb1c_sink SELECT username,count(username) FROM users GROUP BY username");
 
 //        DataStream<Row> sinkStream = tableEnv.toAppendStream(table, Row.class);
 //        sinkStream.addSink(new SinkFunction<Row>() {
