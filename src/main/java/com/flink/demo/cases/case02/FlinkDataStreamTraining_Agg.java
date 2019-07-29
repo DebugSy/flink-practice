@@ -1,6 +1,8 @@
 package com.flink.demo.cases.case02;
 
+import com.flink.demo.cases.common.datasource.OutOfOrderDataSource;
 import com.flink.demo.cases.common.datasource.UrlClickDataSource;
+import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.api.java.tuple.Tuple2;
@@ -30,12 +32,15 @@ public class FlinkDataStreamTraining_Agg {
         env.setParallelism(1);
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
-        DataStreamSource<Tuple3<String, String, Timestamp>> clickStream = env.addSource(new UrlClickDataSource());
-        KeyedStream<Tuple3<String, String, Timestamp>, Tuple> keyedStream = clickStream.assignTimestampsAndWatermarks(new BoundedOutOfOrdernessTimestampExtractor<Tuple3<String, String, Timestamp>>(Time.seconds(10)) {
+        DataStreamSource<Tuple3<String, String, Timestamp>> clickStream = env.addSource(new OutOfOrderDataSource());
+        KeyedStream<Tuple3<String, String, Timestamp>, Tuple> keyedStream = clickStream.assignTimestampsAndWatermarks(
+                new BoundedOutOfOrdernessTimestampExtractor<Tuple3<String, String, Timestamp>>(Time.seconds(10)) {
             @Override
             public long extractTimestamp(Tuple3<String, String, Timestamp> element) {
                 return element.f2.getTime();
             }
+
+
         }).keyBy(0);
 
         SingleOutputStreamOperator<Tuple2<String, Long>> sum = keyedStream.timeWindow(Time.seconds(10))
@@ -71,8 +76,15 @@ public class FlinkDataStreamTraining_Agg {
             }
         });
 
+        logger.info("execute flink job......");
+
+        String jobName = env.getStreamGraph().getJobName();
+        logger.info("job name is {}", jobName);
 
         env.execute("Flink DataStram Training Aggregate");
+
+        ExecutionConfig config = env.getConfig();
+        System.out.println(config);
     }
 
 }
