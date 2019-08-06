@@ -19,6 +19,10 @@ public class UrlClickDataSource extends RichSourceFunction<Tuple3<String, String
 
     private volatile boolean running = true;
 
+    public static String CLICK_FIELDS = "username,url,clickTime";
+
+    public static String CLICK_FIELDS_WITH_ROWTIME = "username,url,clickTime,clickActionTime.rowtime";
+
     @Override
     public void run(SourceContext<Tuple3<String, String, Timestamp>> ctx) throws Exception {
         Random random = new Random(System.currentTimeMillis());

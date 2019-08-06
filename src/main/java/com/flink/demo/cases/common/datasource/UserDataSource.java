@@ -19,6 +19,10 @@ public class UserDataSource extends RichSourceFunction<Tuple4<Integer, String, S
 
     private volatile boolean running = true;
 
+    public static String USER_FIELDS = "userId,username,address,activityTime";
+
+    public static String USER_FIELDS_WITH_ROWTIME = "userId,username,address,activityTime";
+
     @Override
     public void run(SourceContext<Tuple4<Integer, String, String, Timestamp>> ctx) throws Exception {
         Random random = new Random(System.currentTimeMillis());
