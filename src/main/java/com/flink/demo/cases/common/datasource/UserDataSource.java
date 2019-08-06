@@ -10,6 +10,8 @@ import java.util.Random;
 
 /**
  * Created by DebugSy on 2019/7/15.
+ *
+ * 用户活动事件数据源
  */
 public class UserDataSource extends RichSourceFunction<Tuple4<Integer, String, String, Timestamp>> {
 

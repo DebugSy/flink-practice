@@ -1,4 +1,4 @@
-package com.flink.demo.cases.case03;
+package com.flink.demo.cases.common.datasink;
 
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
@@ -19,6 +19,9 @@ public class AppendSink_jdbc implements AppendStreamTableSink<Row>{
     private String[] fieldNames;
 
     private TypeInformation<?>[] fieldTypes;
+
+    public AppendSink_jdbc() {
+    }
 
     public AppendSink_jdbc(String[] fieldNames, TypeInformation<?>[] fieldTypes) {
         this.fieldNames = fieldNames;
@@ -48,6 +51,8 @@ public class AppendSink_jdbc implements AppendStreamTableSink<Row>{
 
     @Override
     public TableSink<Row> configure(String[] fieldNames, TypeInformation<?>[] fieldTypes) {
+        this.fieldNames = fieldNames;
+        this.fieldTypes = fieldTypes;
         return new AppendSink_jdbc(fieldNames, fieldTypes);
     }
 }

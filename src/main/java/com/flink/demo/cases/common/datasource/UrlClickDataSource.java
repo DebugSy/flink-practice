@@ -10,6 +10,8 @@ import java.util.Random;
 
 /**
  * Created by DebugSy on 2019/7/15.
+ *
+ * 用户点击网页事件数据源
  */
 public class UrlClickDataSource extends RichSourceFunction<Tuple3<String, String, Timestamp>> {
 

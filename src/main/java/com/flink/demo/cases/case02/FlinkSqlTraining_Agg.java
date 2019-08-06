@@ -44,10 +44,7 @@ public class FlinkSqlTraining_Agg {
             "group by username, " +
             "TUMBLE(rowtime, INTERVAL '10' SECOND)";
 
-    private static String hopWindowSql = "select username, count(*) as cnt, " +
-            "HOP_ROWTIME(rowtime, INTERVAL '5' SECOND, INTERVAL '10' SECOND) as window_rowtime, " +
-            "HOP_START(rowtime, INTERVAL '5' SECOND, INTERVAL '10' SECOND) as window_start, " +
-            "HOP_END(rowtime, INTERVAL '5' SECOND, INTERVAL '10' SECOND) as window_end " +
+    private static String hopWindowSql = "select username, count(*) as cnt " +
             "from clicks " +
             "where url like '%/api/H%'" +
             "group by username, " +
@@ -57,7 +54,7 @@ public class FlinkSqlTraining_Agg {
 
     public static void main(String[] args) throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        env.setParallelism(4);
+        env.setParallelism(1);
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
         StreamTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(env);
@@ -76,11 +73,19 @@ public class FlinkSqlTraining_Agg {
 //        Table sqlQuery = tableEnv.sqlQuery(tumbleWindowSql);
         Table sqlQuery = tableEnv.sqlQuery(hopWindowSql);
 
-        DataStream<Tuple2<Boolean, Row>> sinkStream = tableEnv.toRetractStream(sqlQuery, Row.class);
-        sinkStream.addSink(new SinkFunction<Tuple2<Boolean, Row>>() {
+//        DataStream<Tuple2<Boolean, Row>> sinkStream = tableEnv.toRetractStream(sqlQuery, Row.class);
+//        sinkStream.addSink(new SinkFunction<Tuple2<Boolean, Row>>() {
+//            @Override
+//            public void invoke(Tuple2<Boolean, Row> value, Context context) throws Exception {
+//                logger.error("print retract:{} -> {}", value.f0, value.f1);
+//            }
+//        }).name("Print to Std.Error");
+
+        DataStream<Row> sinkStream = tableEnv.toAppendStream(sqlQuery, Row.class);
+        sinkStream.addSink(new SinkFunction<Row>() {
             @Override
-            public void invoke(Tuple2<Boolean, Row> value, Context context) throws Exception {
-                logger.error("print retract:{} -> {}", value.f0, value.f1);
+            public void invoke(Row value, Context context) throws Exception {
+                logger.error("print retract:{}", value);
             }
         }).name("Print to Std.Error");
 

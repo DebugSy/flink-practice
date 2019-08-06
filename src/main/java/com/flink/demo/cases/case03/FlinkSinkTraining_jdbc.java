@@ -1,18 +1,14 @@
 package com.flink.demo.cases.case03;
 
+import com.flink.demo.cases.common.datasink.AppendSink_jdbc;
 import com.flink.demo.cases.common.datasource.UserDataSource;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.streaming.api.TimeCharacteristic;
-import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.sink.SinkFunction;
-import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
-import org.apache.flink.table.sinks.CsvTableSink;
-import org.apache.flink.types.Row;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,11 +23,16 @@ public class FlinkSinkTraining_jdbc {
 
     private static String userFields = "userId,username,address,activityTime";
 
-    private static String[] fieldNames = {"username", "count"};
+    /**
+     * 1. 字段顺序应该与字段类型一致
+     * 2. sink表字段顺序应该与select语句的字段顺序一致
+     */
+    private static String[] fieldNames = {"userId_alis", "username_alis", "address_alis"};
 
     private static TypeInformation[] typeInfos = {
+            TypeInformation.of(Integer.class),
             TypeInformation.of(String.class),
-            TypeInformation.of(Long.class),
+            TypeInformation.of(String.class)
     };
 
     public static void main(String[] args) throws Exception {
@@ -44,9 +45,10 @@ public class FlinkSinkTraining_jdbc {
         DataStreamSource<Tuple4<Integer, String, String, Timestamp>> userStream = env.addSource(new UserDataSource());
         tableEnv.registerDataStream("users", userStream, userFields);
 //        tableEnv.registerTableSink("jdb1c_sink", new AppendSink_jdbc(fieldNames, typeInfos));
-        tableEnv.registerTableSink("jdb1c_sink", fieldNames, typeInfos, new RetractSink_jdbc());
+        tableEnv.registerTableSink("jdb1c_sink", fieldNames, typeInfos, new AppendSink_jdbc());
 
-        tableEnv.sqlUpdate("insert into jdb1c_sink SELECT username,count(username) FROM users GROUP BY username");
+//        tableEnv.sqlUpdate("insert into jdb1c_sink SELECT username,count(username) FROM users GROUP BY username");
+        tableEnv.sqlUpdate("insert into jdb1c_sink SELECT userId as userId_alis,username as username_alis,address as address_alis FROM users");
 
 //        DataStream<Row> sinkStream = tableEnv.toAppendStream(table, Row.class);
 //        sinkStream.addSink(new SinkFunction<Row>() {

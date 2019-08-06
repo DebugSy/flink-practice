@@ -1,4 +1,4 @@
-package com.flink.demo.cases.case03;
+package com.flink.demo.cases.common.datasink;
 
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.common.typeinfo.Types;
