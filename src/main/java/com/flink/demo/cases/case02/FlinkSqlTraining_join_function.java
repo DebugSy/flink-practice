@@ -33,9 +33,9 @@ import java.util.Map;
  * Flink SQL 训练 - 连接函数训练
  * 与静态表join
  */
-public class FlinkSqlTraining_Join_Function {
+public class FlinkSqlTraining_join_function {
 
-    private static final Logger logger = LoggerFactory.getLogger(FlinkSqlTraining_Join_Function.class);
+    private static final Logger logger = LoggerFactory.getLogger(FlinkSqlTraining_join_function.class);
 
     private static String fields = "username,url,clickTime,rowtime.rowtime";
 

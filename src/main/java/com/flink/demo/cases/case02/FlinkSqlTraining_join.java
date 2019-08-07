@@ -2,9 +2,7 @@ package com.flink.demo.cases.case02;
 
 import com.flink.demo.cases.common.datasource.UrlClickDataSource;
 import com.flink.demo.cases.common.datasource.UserDataSource;
-import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.tuple.Tuple;
-import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.streaming.api.TimeCharacteristic;
@@ -16,17 +14,12 @@ import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor;
 import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.TableEnvironment;
-import org.apache.flink.table.api.Types;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
-import org.apache.flink.table.functions.FunctionContext;
-import org.apache.flink.table.functions.TableFunction;
 import org.apache.flink.types.Row;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Timestamp;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 /**
  * Created by DebugSy on 2019/7/10.
@@ -35,9 +28,9 @@ import java.util.Map;
  * Flink SQL 训练 - 两个流基于时间窗口连接训练
  *
  */
-public class FlinkSqlTraining_Join {
+public class FlinkSqlTraining_join {
 
-    private static final Logger logger = LoggerFactory.getLogger(FlinkSqlTraining_Join.class);
+    private static final Logger logger = LoggerFactory.getLogger(FlinkSqlTraining_join.class);
 
     private static String clickFields = "username,url,clickTime";
 
