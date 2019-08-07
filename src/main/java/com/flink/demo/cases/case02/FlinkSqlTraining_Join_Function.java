@@ -31,7 +31,7 @@ import java.util.Map;
  *
  * java case 02
  * Flink SQL 训练 - 连接函数训练
- *
+ * 与静态表join
  */
 public class FlinkSqlTraining_Join_Function {
 

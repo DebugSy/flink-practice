@@ -1,7 +1,6 @@
-package com.flink.demo.cases.case02;
+package com.flink.demo.cases.case06;
 
 import com.flink.demo.cases.common.datasource.OutOfOrderDataSource;
-import com.flink.demo.cases.common.datasource.UrlClickDataSource;
 import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.api.java.tuple.Tuple;
@@ -22,6 +21,9 @@ import java.sql.Timestamp;
 
 /**
  * Created by DebugSy on 2019/7/17.
+ *
+ * java case 06
+ * Flink DataStream 训练 - 聚合函数训练
  */
 public class FlinkDataStreamTraining_Agg {
 

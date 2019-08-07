@@ -1,4 +1,4 @@
-package com.flink.demo.cases.case02;
+package com.flink.demo.cases.case06;
 
 import com.flink.demo.cases.common.datasource.UrlClickDataSource;
 import org.apache.flink.api.java.tuple.Tuple;
@@ -10,7 +10,6 @@ import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
-import org.apache.flink.streaming.api.functions.source.RichSourceFunction;
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor;
 import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.TableEnvironment;
@@ -20,12 +19,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Timestamp;
-import java.util.Random;
 
 /**
  * Created by DebugSy on 2019/7/10.
  *
- * java case 02
+ * java case 06
  * Flink SQL 训练 - 聚合函数训练
  * TUMBLE 滑动窗口
  * HOP 滚动窗口
