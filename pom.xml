@@ -9,7 +9,7 @@
     <artifactId>flink-demo</artifactId>
 
     <properties>
-        <flink.version>1.7.2</flink.version>
+        <flink.version>1.8.1</flink.version>
         <scala.version>2.11</scala.version>
     </properties>
 
@@ -33,7 +33,12 @@
         </dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-table_${scala.version}</artifactId>
+            <artifactId>flink-table-planner_2.11</artifactId>
+            <version>${flink.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-table-api-java-bridge_2.11</artifactId>
             <version>${flink.version}</version>
         </dependency>
 
@@ -54,12 +59,6 @@
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-runtime-web_${scala.version}</artifactId>
             <version>${flink.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.12</version>
-            <scope>test</scope>
         </dependency>
 
         <!-- flink connector -->
@@ -96,6 +95,15 @@
             <artifactId>slf4j-api</artifactId>
             <version>1.7.25</version>
         </dependency>
+
+        <!-- test -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.12</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
     <build>
