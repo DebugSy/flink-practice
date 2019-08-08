@@ -1,7 +1,7 @@
 package com.flink.demo.cases.case02;
 
 import com.flink.demo.cases.common.datasource.UrlClickDataSource;
-import org.apache.flink.api.common.typeinfo.TypeInformation;
+import com.flink.demo.cases.common.functions.udtf.UserTableFunction;
 import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
@@ -14,17 +14,12 @@ import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor;
 import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.TableEnvironment;
-import org.apache.flink.table.api.Types;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
-import org.apache.flink.table.functions.FunctionContext;
-import org.apache.flink.table.functions.TableFunction;
 import org.apache.flink.types.Row;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Timestamp;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 /**
  * Created by DebugSy on 2019/7/10.
@@ -43,7 +38,6 @@ public class FlinkSqlTraining_join_function {
      * 流连接侧表，类似lookup
      */
     private static String innerJoinSql = "select username,sid,cid from clicks, LATERAL TABLE(users(username)) as T(name,sid,cid)";
-
 
     public static void main(String[] args) throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
@@ -64,7 +58,7 @@ public class FlinkSqlTraining_join_function {
 
         tableEnv.registerDataStream("clicks", keyedStream, fields);
 
-        LookupUDTF lookupUDTF = new LookupUDTF();
+        UserTableFunction lookupUDTF = new UserTableFunction();
         tableEnv.registerFunction("users", lookupUDTF);
 
         Table sqlQuery = tableEnv.sqlQuery(innerJoinSql);
@@ -79,38 +73,6 @@ public class FlinkSqlTraining_join_function {
 
 
         env.execute("Flink SQL Training");
-    }
-
-    public static class LookupUDTF extends TableFunction<Row> {
-
-        private Map<String, Row> caches = new LinkedHashMap<>();
-
-        @Override
-        public void open(FunctionContext context) throws Exception {
-            for (int i = 0; i < 100; i ++) {
-                Row r = new Row(3);
-                String key = "用户" + (char) ('A' + i);
-                r.setField(0, key);
-                r.setField(1, i);
-                r.setField(2, i * 10);
-                caches.put(key, r);
-            }
-        }
-
-        public void eval(String username) {
-            if (caches.containsKey(username)) {
-                Row row = caches.get(username);
-                logger.info("get row {} with key {}", row, username);
-                collect(row);
-            } else {
-                logger.info("can't find key:{}", username);
-            }
-        }
-
-        @Override
-        public TypeInformation<Row> getResultType() {
-            return Types.ROW(Types.STRING(), Types.INT(), Types.INT());
-        }
     }
 
 }
