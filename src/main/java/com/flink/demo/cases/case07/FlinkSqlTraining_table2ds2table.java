@@ -1,6 +1,7 @@
 package com.flink.demo.cases.case07;
 
 import com.flink.demo.cases.common.datasource.OutOfOrderDataSource;
+import com.flink.demo.cases.common.watermark.CustomTimestampExtractor;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
@@ -12,6 +13,7 @@ import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor;
+import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.TableSchema;
@@ -64,12 +66,8 @@ public class FlinkSqlTraining_table2ds2table {
 
         DataStreamSource<Tuple3<String, String, Timestamp>> sourceStream = env.addSource(new OutOfOrderDataSource());
 
-        KeyedStream<Tuple3<String, String, Timestamp>, Tuple> keyedStream = sourceStream.assignTimestampsAndWatermarks(new AscendingTimestampExtractor<Tuple3<String, String, Timestamp>>() {
-            @Override
-            public long extractAscendingTimestamp(Tuple3<String, String, Timestamp> element) {
-                return element.f2.getTime();
-            }
-        }).keyBy(0);
+        KeyedStream<Tuple3<String, String, Timestamp>, Tuple> keyedStream = sourceStream
+                .assignTimestampsAndWatermarks(new CustomTimestampExtractor(Time.seconds(0))).keyBy(0);
 
         tableEnv.registerDataStream("clicks", keyedStream, fields);
 
@@ -86,12 +84,13 @@ public class FlinkSqlTraining_table2ds2table {
         TypeInformation<Row> rowTypeInformation = schema.toRowType();
 
         DataStream<Row> rowDataStream = tableEnv.toAppendStream(sqlQuery, rowTypeInformation);
+        rowDataStream.printToErr("[FIRST]");
         tableEnv.registerDataStream("ds", rowDataStream, joinString);
 
         Table table = tableEnv.sqlQuery(secondSql);
 
         DataStream<Row> sinkStream = tableEnv.toAppendStream(table, Row.class);
-        sinkStream.printToErr();
+        sinkStream.printToErr("[SECOND]");
 
 
         env.execute("Flink SQL Training");
