@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.{Date, Properties, Random}
 
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
+import org.codehaus.jettison.json.JSONObject
 
 /**
   * Created by DebugSy on 2018/6/7.
@@ -43,14 +44,13 @@ class SampleKafkaProducer {
   }
 
   def prepareMessage(): String = {
-//    val random = new Random()
-//    val event = new JSONObject()
-//    event.put("uid", getUserId)
-//      .put("event_time", System.currentTimeMillis().toString)
-//      .put("os_type", "Android")
-//      .put("click_count", random.nextInt(10))
-//    event.toString
-    ""
+    val random = new Random()
+    val event = new JSONObject()
+    event.put("uid", getUserId)
+      .put("event_time", System.currentTimeMillis().toString)
+      .put("os_type", "Android")
+      .put("click_count", random.nextInt(10))
+    event.toString
   }
 
   private def getUserId(): String = {
@@ -78,7 +78,7 @@ object SampleKafkaProducer {
     val producer = new SampleKafkaProducer
     producer.init("localhost:9092")
     while (true) {
-      producer.produce("shiy01")
+      producer.produce("kafka_sink")
       Thread.sleep(1000)
     }
   }

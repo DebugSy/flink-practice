@@ -3,7 +3,8 @@ package com.flink.demo.cases.case01
 
 import java.util.{Arrays, List, Properties}
 
-import org.apache.kafka.clients.consumer.{ConsumerRecord, ConsumerRecords, KafkaConsumer}
+import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecord, ConsumerRecords, KafkaConsumer}
+import org.apache.kafka.clients.producer.ProducerConfig
 
 import scala.collection.JavaConversions._
 
@@ -28,8 +29,8 @@ class SampleKafkaConsumer(bootstrap: String, topics: List[String]) {
     props.put("enable.auto.commit", "true")
     props.put("auto.commit.interval.ms", "1000")
     props.put("session.timeout.ms", "30000")
-    props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
-    props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
+    props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer")
+    props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer")
     props
   }
 
@@ -49,7 +50,7 @@ class SampleKafkaConsumer(bootstrap: String, topics: List[String]) {
 object SampleKafkaConsumer {
 
   def main(args: Array[String]): Unit = {
-    val kafkaConsumer = new SampleKafkaConsumer("localhost:9092", Arrays.asList("shiy01"))
+    val kafkaConsumer = new SampleKafkaConsumer("localhost:9092", Arrays.asList("kafka_sink"))
     while (true)
       kafkaConsumer.show(kafkaConsumer.consumer())
   }
