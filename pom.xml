@@ -78,6 +78,7 @@
             <version>${flink.version}</version>
         </dependency>
 
+        <!-- flink format -->
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-csv</artifactId>
@@ -89,9 +90,20 @@
             <version>${flink.version}</version>
         </dependency>
 
+        <!-- flink state -->
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-statebackend-rocksdb_2.11</artifactId>
+            <artifactId>flink-statebackend-rocksdb_${scala.version}</artifactId>
+            <version>${flink.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-queryable-state-runtime_${scala.version}</artifactId>
+            <version>${flink.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-queryable-state-client-java_${scala.version}</artifactId>
             <version>${flink.version}</version>
         </dependency>
 

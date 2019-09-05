@@ -1,8 +1,11 @@
 package com.flink.demo.cases.case10;
 
+import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
+import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
+import org.apache.flink.api.common.time.Time;
 import org.apache.flink.api.common.typeinfo.TypeHint;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.tuple.Tuple2;
@@ -24,7 +27,9 @@ import java.util.Random;
 public class FlinkStateTraining {
 
     public static void main(String[] args) throws Exception {
-        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        Configuration configuration = new Configuration();
+        configuration.setString("queryable-state.enable", "true");
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironment(1, configuration);
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
         env.setParallelism(1);
         env.enableCheckpointing(1000 * 5);
@@ -34,6 +39,9 @@ public class FlinkStateTraining {
         env.getCheckpointConfig().setMaxConcurrentCheckpoints(1);
         env.getCheckpointConfig().enableExternalizedCheckpoints(CheckpointConfig.ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION);
         env.setStateBackend((StateBackend)new RocksDBStateBackend("file:///tmp/flink-checkpoints/"));
+
+        env.setRestartStrategy(RestartStrategies.fixedDelayRestart(3, Time.seconds(10)));
+
 
         // this can be used in a streaming program like this (assuming we have a StreamExecutionEnvironment env)
         env.addSource(new DataSource()).keyBy(0)
@@ -84,6 +92,9 @@ class CountWindowAverage extends RichFlatMapFunction<Tuple2<Long, Long>, Tuple2<
 
         // access the state value
         Tuple2<Long, Long> currentSum = sum.value();
+        if (currentSum == null) {
+            currentSum = new Tuple2<>(0L, 0L);
+        }
 
         // update the count
         currentSum.f0 += 1;
@@ -106,9 +117,8 @@ class CountWindowAverage extends RichFlatMapFunction<Tuple2<Long, Long>, Tuple2<
         ValueStateDescriptor<Tuple2<Long, Long>> descriptor =
                 new ValueStateDescriptor<>(
                         "average", // the state name
-                        TypeInformation.of(new TypeHint<Tuple2<Long, Long>>() {
-                        }), // type information
-                        Tuple2.of(0L, 0L)); // default value of the state, if nothing was set
+                        TypeInformation.of(new TypeHint<Tuple2<Long, Long>>() {})); // default value of the state, if nothing was set
+        descriptor.setQueryable("query-name");
         sum = getRuntimeContext().getState(descriptor);
     }
 }
