@@ -29,6 +29,13 @@ public class FlinkStateTraining {
     public static void main(String[] args) throws Exception {
         Configuration configuration = new Configuration();
         configuration.setString("queryable-state.enable", "true");
+        configuration.setString("metrics.reporter.influxdb.class", "org.apache.flink.metrics.influxdb.InfluxdbReporter");
+        configuration.setString("metrics.reporter.influxdb.host", "localhost");
+        configuration.setString("metrics.reporter.influxdb.port", "8086");
+        configuration.setString("metrics.reporter.influxdb.db", "flink_metrics");
+        configuration.setString("metrics.reporter.influxdb.username", "admin");
+        configuration.setString("metrics.reporter.influxdb.password", "admin");
+
         StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironment(1, configuration);
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
         env.setParallelism(1);
@@ -41,6 +48,8 @@ public class FlinkStateTraining {
         env.setStateBackend((StateBackend)new RocksDBStateBackend("file:///tmp/flink-checkpoints/"));
 
         env.setRestartStrategy(RestartStrategies.fixedDelayRestart(3, Time.seconds(10)));
+
+        env.getConfig().setLatencyTrackingInterval(10000);
 
 
         // this can be used in a streaming program like this (assuming we have a StreamExecutionEnvironment env)
