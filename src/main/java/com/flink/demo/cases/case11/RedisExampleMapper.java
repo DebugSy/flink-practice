@@ -1,12 +1,16 @@
 package com.flink.demo.cases.case11;
 
+import com.flink.demo.cases.case12.Util;
+import com.flink.demo.cases.case12.mapper.RedisCommand;
+import com.flink.demo.cases.case12.mapper.RedisCommandDescription;
+import com.flink.demo.cases.case12.mapper.RedisMapper;
 import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.streaming.connectors.redis.common.mapper.RedisCommand;
-import org.apache.flink.streaming.connectors.redis.common.mapper.RedisCommandDescription;
-import org.apache.flink.streaming.connectors.redis.common.mapper.RedisMapper;
 import org.apache.flink.types.Row;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by P0007 on 2019/9/6.
@@ -19,35 +23,37 @@ public class RedisExampleMapper implements RedisMapper<Tuple2<Boolean, Row>> {
 
     private String additionaKey;
 
-    public RedisExampleMapper(int keyIndex, String additionaKey) {
+    private String[] fieldNames;
+
+    public RedisExampleMapper(int keyIndex, String additionaKey, String[] fieldNames) {
         this.keyIndex = keyIndex;
         this.additionaKey = additionaKey;
+        this.fieldNames = fieldNames;
     }
 
     @Override
     public RedisCommandDescription getCommandDescription() {
-        return new RedisCommandDescription(RedisCommand.HSET, additionaKey);
+        return new RedisCommandDescription(RedisCommand.HMSET, additionaKey);
     }
 
     @Override
     public String getKeyFromData(Tuple2<Boolean, Row> row) {
         String key = row.f1.getField(keyIndex).toString();
-        logger.info("extract key {} from {}", key, row);
+        String rediesKey = Util.rediesKey(additionaKey, key);
+        logger.info("extract key {} from {}", rediesKey, row);
         return key;
     }
 
     @Override
-    public String getValueFromData(Tuple2<Boolean, Row> row) {
-        StringBuilder stringBuilder = new StringBuilder();
-        int arity = row.getArity();
-        for (int i = 0; i < arity; i++) {
+    public Map<String, String> getValueFromData(Tuple2<Boolean, Row> data) {
+        Map<String, String> result = new HashMap<>();
+        Row row = data.f1;
+        for (int i = 0; i < fieldNames.length; i++) {
             if (i != keyIndex) {
-                stringBuilder.append(row.f1.getField(i));
-                stringBuilder.append(",");
+                result.put(fieldNames[i], String.valueOf(row.getField(i)));
             }
         }
-        logger.info("extract value {} from {}", stringBuilder.toString(), row);
-        return stringBuilder.toString();
+        return result;
     }
 
 

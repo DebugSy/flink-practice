@@ -57,6 +57,7 @@ public class FlinkSqlTraining_Agg {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(1);
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
+        env.getConfig().setLatencyTrackingInterval(1000);
 
         StreamTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(env);
 
