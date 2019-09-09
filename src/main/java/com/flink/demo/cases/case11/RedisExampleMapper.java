@@ -15,7 +15,7 @@ import java.util.Map;
 /**
  * Created by P0007 on 2019/9/6.
  */
-public class RedisExampleMapper implements RedisMapper<Tuple2<Boolean, Row>> {
+public class RedisExampleMapper implements RedisMapper<Row> {
 
     private static final Logger logger = LoggerFactory.getLogger(RedisExampleMapper.class);
 
@@ -37,17 +37,16 @@ public class RedisExampleMapper implements RedisMapper<Tuple2<Boolean, Row>> {
     }
 
     @Override
-    public String getKeyFromData(Tuple2<Boolean, Row> row) {
-        String key = row.f1.getField(keyIndex).toString();
+    public String getKeyFromData(Row row) {
+        String key = row.getField(keyIndex).toString();
         String rediesKey = Util.rediesKey(additionaKey, key);
         logger.info("extract key {} from {}", rediesKey, row);
         return key;
     }
 
     @Override
-    public Map<String, String> getValueFromData(Tuple2<Boolean, Row> data) {
+    public Map<String, String> getValueFromData(Row row) {
         Map<String, String> result = new HashMap<>();
-        Row row = data.f1;
         for (int i = 0; i < fieldNames.length; i++) {
             if (i != keyIndex) {
                 result.put(fieldNames[i], String.valueOf(row.getField(i)));

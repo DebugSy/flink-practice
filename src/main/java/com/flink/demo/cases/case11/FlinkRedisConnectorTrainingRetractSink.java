@@ -1,19 +1,15 @@
 package com.flink.demo.cases.case11;
 
-import com.flink.demo.cases.case12.config.FlinkJedisPoolConfig;
-import com.flink.demo.cases.case12.RedisSink;
 import com.flink.demo.cases.common.datasource.UrlClickRowDataSource;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.tuple.Tuple;
-import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor;
-import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.TableEnvironment;
-import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.api.Types;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.apache.flink.types.Row;
@@ -25,13 +21,13 @@ import java.sql.Timestamp;
 /**
  * Created by P0007 on 2019/9/6.
  */
-public class FlinkRedisConnectorTraining_sink {
+public class FlinkRedisConnectorTrainingRetractSink {
 
-    private static final Logger logger = LoggerFactory.getLogger(FlinkRedisConnectorTraining_sink.class);
+    private static final Logger logger = LoggerFactory.getLogger(FlinkRedisConnectorTrainingRetractSink.class);
 
     private static String fields = "username,url,clickTime,rowtime.rowtime";
 
-    private static String hopWindowSql = "select username, count(*) as cnt " +
+    private static String hopWindowSql = "insert into test_sink select username, count(*) as cnt " +
             "from clicks " +
             "group by username";
 
@@ -42,6 +38,13 @@ public class FlinkRedisConnectorTraining_sink {
                     Types.STRING(),
                     Types.STRING(),
                     Types.SQL_TIMESTAMP()
+            });
+
+    private static TypeInformation returnTypeInfo = Types.ROW(
+            new String[]{"username", "cnt"},
+            new TypeInformation[]{
+                    Types.STRING(),
+                    Types.LONG()
             });
 
     public static void main(String[] args) throws Exception {
@@ -64,20 +67,22 @@ public class FlinkRedisConnectorTraining_sink {
 
         tableEnv.registerDataStream("clicks", keyedStream, fields);
 
+        tableEnv.registerTableSink("test_sink", new RedisRetractTableSink((RowTypeInfo) returnTypeInfo));
+
 //        Table sqlQuery = tableEnv.sqlQuery(tumbleWindowSql);
-        Table sqlQuery = tableEnv.sqlQuery(hopWindowSql);
+        tableEnv.sqlUpdate(hopWindowSql);
 
-        DataStream<Tuple2<Boolean, Row>> sinkStream = tableEnv.toRetractStream(sqlQuery, Row.class);
+//        DataStream<Tuple2<Boolean, Row>> sinkStream = tableEnv.toRetractStream(sqlQuery, Row.class);
 //        DataStream<Row> sinkStream = tableEnv.toAppendStream(sqlQuery, Row.class);
-        TableSchema schema = sqlQuery.getSchema();
-        String[] fieldNames = schema.getFieldNames();
+//        TableSchema schema = sqlQuery.getSchema();
+//        String[] fieldNames = schema.getFieldNames();
 
 
-        FlinkJedisPoolConfig conf = new FlinkJedisPoolConfig.Builder().setHost("192.168.1.83").setPort(6378).build();
-
-        sinkStream.addSink(new RedisSink<Tuple2<Boolean, Row>>(
-                conf,
-                new RedisExampleMapper(0, "flink-sink-3", fieldNames)));
+//        FlinkJedisPoolConfig conf = new FlinkJedisPoolConfig.Builder().setHost("192.168.1.83").setPort(6378).build();
+//
+//        sinkStream.addSink(new RedisSink<Row>(
+//                conf,
+//                new RedisExampleMapper(0, "flink-sink-3", fieldNames)));
 
         env.execute("Flink SQL Training");
     }
