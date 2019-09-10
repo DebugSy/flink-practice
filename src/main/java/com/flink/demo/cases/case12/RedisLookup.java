@@ -4,6 +4,7 @@ import com.flink.demo.cases.case12.config.FlinkJedisConfigBase;
 import com.flink.demo.cases.case12.container.RedisCommandsContainer;
 import com.flink.demo.cases.case12.container.RedisCommandsContainerBuilder;
 import com.flink.demo.cases.case12.mapper.RedisCommand;
+import com.flink.demo.cases.common.utils.TypeInfoUtil;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.table.api.Types;
@@ -51,10 +52,12 @@ public class RedisLookup extends TableFunction<Row> {
         Map<String, String> value = redisCommandsContainer.hgetAll(rediesKey);
         String[] fieldNames = rowTypeInfo.getFieldNames();
         Row row = new Row(fieldNames.length);
-        row.setField(0, key);
+        row.setField(0, TypeInfoUtil.cast(key, rowTypeInfo.getTypeAt(0)));//这里还需要将类型转换
         for (int i = 1; i < fieldNames.length; i++) {
             String valueStr = value.get(fieldNames[i]);
-            row.setField(i, valueStr);
+            TypeInformation<Object> fieldType = rowTypeInfo.getTypeAt(fieldNames[i]);
+            Object castedValue = TypeInfoUtil.cast(valueStr, fieldType);
+            row.setField(i, castedValue);//这里还需要将类型转换
         }
         collect(row);
     }

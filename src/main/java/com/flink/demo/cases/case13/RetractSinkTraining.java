@@ -1,4 +1,4 @@
-package com.flink.demo.cases.case11;
+package com.flink.demo.cases.case13;
 
 import com.flink.demo.cases.common.datasource.UrlClickRowDataSource;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
@@ -21,14 +21,15 @@ import java.sql.Timestamp;
 /**
  * Created by P0007 on 2019/9/6.
  */
-public class FlinkRedisConnectorTrainingAppendSink {
+public class RetractSinkTraining {
 
-    private static final Logger logger = LoggerFactory.getLogger(FlinkRedisConnectorTrainingAppendSink.class);
+    private static final Logger logger = LoggerFactory.getLogger(RetractSinkTraining.class);
 
     private static String fields = "username,url,clickTime,rowtime.rowtime";
 
-    private static String hopWindowSql = "insert into test_sink select username " +
-            "from clicks ";
+    private static String hopWindowSql = "insert into test_sink select username, count(*) as cnt " +
+            "from clicks " +
+            "group by username";
 
     private static TypeInformation userClickTypeInfo = Types.ROW(
             new String[]{"userId", "username", "url", "clickTime"},
@@ -40,9 +41,10 @@ public class FlinkRedisConnectorTrainingAppendSink {
             });
 
     private static TypeInformation returnTypeInfo = Types.ROW(
-            new String[]{"username"},
+            new String[]{"username", "cnt"},
             new TypeInformation[]{
-                    Types.STRING()
+                    Types.STRING(),
+                    Types.LONG()
             });
 
     public static void main(String[] args) throws Exception {
@@ -65,22 +67,9 @@ public class FlinkRedisConnectorTrainingAppendSink {
 
         tableEnv.registerDataStream("clicks", keyedStream, fields);
 
-        tableEnv.registerTableSink("test_sink", new RedisRetractTableSink((RowTypeInfo) returnTypeInfo));
+        tableEnv.registerTableSink("test_sink", new RetractTableSink((RowTypeInfo) returnTypeInfo));
 
-//        Table sqlQuery = tableEnv.sqlQuery(tumbleWindowSql);
         tableEnv.sqlUpdate(hopWindowSql);
-
-//        DataStream<Tuple2<Boolean, Row>> sinkStream = tableEnv.toRetractStream(sqlQuery, Row.class);
-//        DataStream<Row> sinkStream = tableEnv.toAppendStream(sqlQuery, Row.class);
-//        TableSchema schema = sqlQuery.getSchema();
-//        String[] fieldNames = schema.getFieldNames();
-
-
-//        FlinkJedisPoolConfig conf = new FlinkJedisPoolConfig.Builder().setHost("192.168.1.83").setPort(6378).build();
-//
-//        sinkStream.addSink(new RedisSink<Row>(
-//                conf,
-//                new RedisExampleMapper(0, "flink-sink-3", fieldNames)));
 
         env.execute("Flink SQL Training");
     }

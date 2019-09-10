@@ -1,5 +1,7 @@
 package com.flink.demo.cases.case11;
 
+import com.flink.demo.cases.case12.RedisSink;
+import com.flink.demo.cases.case12.config.FlinkJedisPoolConfig;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.api.java.tuple.Tuple2;
@@ -49,6 +51,9 @@ public class RedisRetractTableSink implements RetractStreamTableSink<Row> {
 
     @Override
     public void emitDataStream(DataStream<Tuple2<Boolean, Row>> dataStream) {
-        dataStream.printToErr();
+        FlinkJedisPoolConfig conf = new FlinkJedisPoolConfig.Builder().setHost("192.168.1.83").setPort(6378).build();
+        dataStream.addSink(new RedisSink<Tuple2<Boolean, Row>>(
+                conf,
+                new RedisExampleMapper(0, "flink-redis-sink", rowTypeInfo.getFieldNames())));
     }
 }

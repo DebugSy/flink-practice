@@ -1,4 +1,4 @@
-package com.flink.demo.cases.case11;
+package com.flink.demo.cases.case13;
 
 import com.flink.demo.cases.common.datasource.UrlClickRowDataSource;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
@@ -21,19 +21,18 @@ import java.sql.Timestamp;
 /**
  * Created by P0007 on 2019/9/6.
  *
- * java case 11
+ * 测试案例：测试append和retract两种模式的区别
  *
- * flink redis sink training, 支持retract模式
+ * 区别：retract支持append，append不支持retract
  */
-public class FlinkRedisConnectorTrainingRetractSink {
+public class AppendSinkTraining {
 
-    private static final Logger logger = LoggerFactory.getLogger(FlinkRedisConnectorTrainingRetractSink.class);
+    private static final Logger logger = LoggerFactory.getLogger(AppendSinkTraining.class);
 
     private static String fields = "username,url,clickTime,rowtime.rowtime";
 
-    private static String hopWindowSql = "insert into test_sink select username, count(*) as cnt " +
-            "from clicks " +
-            "group by username";
+    private static String hopWindowSql = "insert into test_sink select username " +
+            "from clicks ";
 
     private static TypeInformation userClickTypeInfo = Types.ROW(
             new String[]{"userId", "username", "url", "clickTime"},
@@ -45,10 +44,9 @@ public class FlinkRedisConnectorTrainingRetractSink {
             });
 
     private static TypeInformation returnTypeInfo = Types.ROW(
-            new String[]{"username", "cnt"},
+            new String[]{"username"},
             new TypeInformation[]{
-                    Types.STRING(),
-                    Types.LONG()
+                    Types.STRING()
             });
 
     public static void main(String[] args) throws Exception {
@@ -71,7 +69,7 @@ public class FlinkRedisConnectorTrainingRetractSink {
 
         tableEnv.registerDataStream("clicks", keyedStream, fields);
 
-        tableEnv.registerTableSink("test_sink", new RedisRetractTableSink((RowTypeInfo) returnTypeInfo));
+        tableEnv.registerTableSink("test_sink", new RetractTableSink((RowTypeInfo) returnTypeInfo));
 
         tableEnv.sqlUpdate(hopWindowSql);
 

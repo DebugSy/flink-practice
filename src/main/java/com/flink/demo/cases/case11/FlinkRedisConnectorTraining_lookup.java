@@ -53,7 +53,7 @@ public class FlinkRedisConnectorTraining_lookup {
             new String[]{"username", "cnt"},
             new TypeInformation[]{
                     Types.STRING(),
-                    Types.STRING()
+                    Types.LONG()
             });
 
     /**
@@ -73,7 +73,7 @@ public class FlinkRedisConnectorTraining_lookup {
         tableEnv.registerDataStream("clicks", streamSource, CLICK_FIELDS);
 
         FlinkJedisPoolConfig conf = new FlinkJedisPoolConfig.Builder().setHost("192.168.1.83").setPort(6378).build();
-        RedisLookup redisLookup = new RedisLookup(conf, (RowTypeInfo) lookupTypeInfo, "flink-sink-3");
+        RedisLookup redisLookup = new RedisLookup(conf, (RowTypeInfo) lookupTypeInfo, "flink-redis-sink");
         tableEnv.registerFunction("users", redisLookup);
 
         Table sqlQuery = tableEnv.sqlQuery(innerJoinSql);

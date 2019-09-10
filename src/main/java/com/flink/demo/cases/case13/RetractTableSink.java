@@ -1,28 +1,34 @@
-package com.flink.demo.cases.case11;
+package com.flink.demo.cases.case13;
 
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.common.typeinfo.Types;
+import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
+import org.apache.flink.api.java.typeutils.TupleTypeInfo;
 import org.apache.flink.streaming.api.datastream.DataStream;
-import org.apache.flink.table.sinks.AppendStreamTableSink;
+import org.apache.flink.table.sinks.RetractStreamTableSink;
 import org.apache.flink.table.sinks.TableSink;
 import org.apache.flink.types.Row;
 
 /**
  * Created by P0007 on 2019/9/9.
  */
-public class RedisAppendTableSink implements AppendStreamTableSink<Row> {
+public class RetractTableSink implements RetractStreamTableSink<Row> {
 
     private RowTypeInfo rowTypeInfo;
 
-    public RedisAppendTableSink(RowTypeInfo rowTypeInfo) {
+    public RetractTableSink(RowTypeInfo rowTypeInfo) {
         this.rowTypeInfo = rowTypeInfo;
     }
 
+    @Override
+    public TypeInformation<Row> getRecordType() {
+        return rowTypeInfo;
+    }
 
     @Override
-    public TypeInformation<Row> getOutputType() {
-        return Types.ROW_NAMED(rowTypeInfo.getFieldNames(), rowTypeInfo.getFieldTypes());
+    public TupleTypeInfo<Tuple2<Boolean, Row>> getOutputType() {
+        return new TupleTypeInfo<>(Types.BOOLEAN, rowTypeInfo);
     }
 
     @Override
@@ -37,12 +43,12 @@ public class RedisAppendTableSink implements AppendStreamTableSink<Row> {
 
     @Override
     public TableSink configure(String[] fieldNames, TypeInformation[] fieldTypes) {
-        RedisAppendTableSink redisTableSink = new RedisAppendTableSink(rowTypeInfo);
-        return redisTableSink;
+        RetractTableSink redisRetractTableSink = new RetractTableSink(rowTypeInfo);
+        return redisRetractTableSink;
     }
 
     @Override
-    public void emitDataStream(DataStream dataStream) {
+    public void emitDataStream(DataStream<Tuple2<Boolean, Row>> dataStream) {
         dataStream.printToErr();
     }
 }
