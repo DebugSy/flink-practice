@@ -2,10 +2,15 @@ package com.flink.demo.cases.case15;
 
 import org.apache.calcite.config.Lex;
 import org.apache.calcite.jdbc.CalciteSchema;
+import org.apache.calcite.plan.RelOptUtil;
+import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeSystem;
+import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.rex.RexProgram;
+import org.apache.calcite.rex.RexProgramBuilder;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.schema.impl.AbstractTable;
 import org.apache.calcite.sql.parser.SqlParser;
@@ -20,6 +25,7 @@ import org.apache.flink.table.api.TableConfig;
 import org.apache.flink.table.calcite.FlinkRelBuilder;
 import org.apache.flink.table.calcite.FlinkTypeSystem;
 import org.apache.flink.table.codegen.ExpressionReducer;
+import org.apache.flink.table.codegen.GeneratedExpression;
 import org.apache.flink.table.expressions.EqualTo;
 import org.apache.flink.table.expressions.Expression;
 import org.apache.flink.table.expressions.Literal;
@@ -28,7 +34,7 @@ import org.apache.flink.table.expressions.ResolvedFieldReference;
 /**
  * Created by P0007 on 2019/9/17.
  */
-public class FlinkexpressionTraining {
+public class FlinkExpressionTraining {
 
     public static final SqlTypeFactoryImpl TYPE_FACTORY = new SqlTypeFactoryImpl(
             RelDataTypeSystem.DEFAULT);
@@ -40,20 +46,24 @@ public class FlinkexpressionTraining {
         CalciteSchema internalSchema = CalciteSchema.createRootSchema(false, false);
         SchemaPlus rootSchema = internalSchema.plus();
 
-        //添加表 test
-        rootSchema.add("tableA", new AbstractTable() {
+        RelDataTypeFactory.Builder builder = new RelDataTypeFactory
+                .Builder(TYPE_FACTORY);
+        //列id, 类型int
+        builder.add("id", new BasicSqlType(TYPE_SYSTEM, SqlTypeName.INTEGER));
+        //列name, 类型为varchar
+        builder.add("name", new BasicSqlType(TYPE_SYSTEM, SqlTypeName.VARCHAR));
+        builder.add("time_str", new BasicSqlType(TYPE_SYSTEM, SqlTypeName.VARCHAR));
+        RelDataType relDataType = builder.build();
+
+        AbstractTable table = new AbstractTable() {
             @Override
             public RelDataType getRowType(RelDataTypeFactory typeFactory) {
-                RelDataTypeFactory.Builder builder = new RelDataTypeFactory
-                        .Builder(TYPE_FACTORY);
-                //列id, 类型int
-                builder.add("id", new BasicSqlType(TYPE_SYSTEM, SqlTypeName.INTEGER));
-                //列name, 类型为varchar
-                builder.add("name", new BasicSqlType(TYPE_SYSTEM, SqlTypeName.VARCHAR));
-                builder.add("time_str", new BasicSqlType(TYPE_SYSTEM, SqlTypeName.VARCHAR));
-                return builder.build();
+                return relDataType;
             }
-        });
+        };
+
+        //添加表 test
+        rootSchema.add("tableA", table);
 
         SqlParser.Config sqlParserConfig = SqlParser
                 .configBuilder()
@@ -81,10 +91,18 @@ public class FlinkexpressionTraining {
         Expression pred2 = new EqualTo(
                 new ResolvedFieldReference("name", Types.STRING),
                 new Literal("UserA", Types.STRING));
-        System.out.println(pred2);
         relBuilder.scan("tableA");
         RexNode rexNode = pred2.toRexNode(relBuilder);
-        System.out.println(rexNode);
+        GeneratedExpression accept = rexNode.accept(new FlinkRexVisitor(relDataType));
+        RelNode filter = relBuilder.filter(rexNode).build();
+
+        System.out.println(accept.code());
+
+        System.out.println(RelOptUtil.toString(filter));
+
+
+        FlinkCodeGenerator flinkCodeGenerator = new FlinkCodeGenerator();
+        flinkCodeGenerator.GenerateFunction(filter);
     }
 
 }
