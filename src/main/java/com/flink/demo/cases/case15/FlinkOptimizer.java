@@ -70,12 +70,26 @@ public class FlinkOptimizer {
         return resultRelNode;
     }
 
+    public RelNode optimize3(RelNode relNode) {
+        RelOptPlanner planner = flinkRelBuilder.getPlanner();
+//        planner.addRule(EnumerableRules.ENUMERABLE_PROJECT_RULE);
+        planner.clear();
+        for (RelOptRule rule : ruleSet) {
+            planner.addRule(rule);
+        }
+        RelTraitSet desiredTraits = relNode.getCluster().traitSet().replace(FlinkConventions.LOGICAL());
+        relNode = planner.changeTraits(relNode, desiredTraits);
+        planner.setRoot(relNode);
+        relNode = planner.findBestExp();
+        return relNode;
+    }
+
     public RelNode optimize2(RelNode relNode) {
         RelOptPlanner planner = shiyRrelBuilder.getPlanner();
 //        planner.addRule(EnumerableRules.ENUMERABLE_PROJECT_RULE);
         planner.addRule(EnumerableRules.ENUMERABLE_FILTER_RULE);
         planner.addRule(EnumerableRules.ENUMERABLE_TABLE_SCAN_RULE);
-//        planner.addRule(TableScanRule.INSTANCE);
+        planner.addRule(TableScanRule.INSTANCE);
 
         RelTraitSet desiredTraits = relNode.getCluster().traitSet()
                 .replace(EnumerableConvention.INSTANCE);
@@ -86,97 +100,11 @@ public class FlinkOptimizer {
     }
 
     RuleSet ruleSet = RuleSets.ofList(
-
-            // push a filter into a join
-            FilterJoinRule.FILTER_ON_JOIN,
-            // push filter into the children of a join
-            FilterJoinRule.JOIN,
-            // push filter through an aggregation
-            FilterAggregateTransposeRule.INSTANCE,
-            // push filter through set operation
-            FilterSetOpTransposeRule.INSTANCE,
-            // push project through set operation
-            ProjectSetOpTransposeRule.INSTANCE,
-
-            // aggregation and projection rules
-            AggregateProjectMergeRule.INSTANCE,
-            AggregateProjectPullUpConstantsRule.INSTANCE,
-            // push a projection past a filter or vice versa
-            ProjectFilterTransposeRule.INSTANCE,
-            FilterProjectTransposeRule.INSTANCE,
-            // push a projection to the children of a join
-            // push all expressions to handle the time indicator correctly
-            new ProjectJoinTransposeRule(PushProjector.ExprCondition.FALSE, RelFactories.LOGICAL_BUILDER),
-            // merge projections
-            ProjectMergeRule.INSTANCE,
-            // remove identity project
-            ProjectRemoveRule.INSTANCE,
-            // reorder sort and projection
-            SortProjectTransposeRule.INSTANCE,
-            ProjectSortTransposeRule.INSTANCE,
-
-            // join rules
-            JoinPushExpressionsRule.INSTANCE,
-
-            // remove union with only a single child
-            UnionEliminatorRule.INSTANCE,
-            // convert non-all union into all-union + distinct
-            UnionToDistinctRule.INSTANCE,
-
-            // remove aggregation if it does not aggregate and input is already distinct
-            AggregateRemoveRule.INSTANCE,
-            // push aggregate through join
-            AggregateJoinTransposeRule.EXTENDED,
-            // aggregate union rule
-            AggregateUnionAggregateRule.INSTANCE,
-
-            // reduce aggregate functions like AVG, STDDEV_POP etc.
-            AggregateReduceFunctionsRule.INSTANCE,
-            WindowAggregateReduceFunctionsRule.INSTANCE,
-
-            // remove unnecessary sort rule
-            SortRemoveRule.INSTANCE,
-
-            // prune empty results rules
-            PruneEmptyRules.AGGREGATE_INSTANCE,
-            PruneEmptyRules.FILTER_INSTANCE,
-            PruneEmptyRules.JOIN_LEFT_INSTANCE,
-            PruneEmptyRules.JOIN_RIGHT_INSTANCE,
-            PruneEmptyRules.PROJECT_INSTANCE,
-            PruneEmptyRules.SORT_INSTANCE,
-            PruneEmptyRules.UNION_INSTANCE,
-
-            // calc rules
-            FilterCalcMergeRule.INSTANCE,
-            ProjectCalcMergeRule.INSTANCE,
             FilterToCalcRule.INSTANCE,
-            ProjectToCalcRule.INSTANCE,
-            CalcMergeRule.INSTANCE,
 
-            // scan optimization
-            PushProjectIntoTableSourceScanRule.INSTANCE(),
-            PushFilterIntoTableSourceScanRule.INSTANCE(),
-
-            // unnest rule
-            LogicalUnnestRule.INSTANCE(),
-
-            // translate to flink logical rel nodes
-            FlinkLogicalAggregate.CONVERTER(),
-            FlinkLogicalWindowAggregate.CONVERTER(),
-            FlinkLogicalOverWindow.CONVERTER(),
             FlinkLogicalCalc.CONVERTER(),
-            FlinkLogicalCorrelate.CONVERTER(),
-            FlinkLogicalIntersect.CONVERTER(),
-            FlinkLogicalJoin.CONVERTER(),
-            FlinkLogicalTemporalTableJoin.CONVERTER(),
-            FlinkLogicalMinus.CONVERTER(),
-            FlinkLogicalSort.CONVERTER(),
-            FlinkLogicalUnion.CONVERTER(),
-            FlinkLogicalValues.CONVERTER(),
-            FlinkLogicalTableSourceScan.CONVERTER(),
-            FlinkLogicalTableFunctionScan.CONVERTER(),
-            FlinkLogicalNativeTableScan.CONVERTER(),
-            FlinkLogicalMatch.CONVERTER()
+
+            FlinkLogicalNativeTableScan.CONVERTER()
   );
 
 }
