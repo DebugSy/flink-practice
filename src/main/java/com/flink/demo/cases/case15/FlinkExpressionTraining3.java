@@ -5,13 +5,11 @@ import org.apache.calcite.config.Lex;
 import org.apache.calcite.jdbc.CalciteSchema;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.logical.LogicalFilter;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeSystem;
-import org.apache.calcite.rex.RexBuilder;
-import org.apache.calcite.rex.RexInputRef;
-import org.apache.calcite.rex.RexLiteral;
-import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.rex.*;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.schema.impl.AbstractTable;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
@@ -73,7 +71,6 @@ public class FlinkExpressionTraining3 {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(1);
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
-        StreamTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(env);
         DataStreamSource<Tuple3<String, String, Timestamp>> sourceStream = env.addSource(new OutOfOrderDataSource());
         KeyedStream<Tuple3<String, String, Timestamp>, Tuple> keyedStream = sourceStream.assignTimestampsAndWatermarks(new AscendingTimestampExtractor<Tuple3<String, String, Timestamp>>() {
             @Override
@@ -99,11 +96,7 @@ public class FlinkExpressionTraining3 {
         FrameworkConfig frameworkConfig = Frameworks
                 .newConfigBuilder()
                 .defaultSchema(rootSchema)
-                .parserConfig(SqlParser.configBuilder().setLex(Lex.JAVA).build())
-                .costFactory(new DataSetCostFactory())
                 .typeSystem(new FlinkTypeSystem())
-                .sqlToRelConverterConfig(config)
-                .executor(new ExpressionReducer(new TableConfig()))
                 .build();
 
 //        FlinkRelBuilder relBuilder = FlinkRelBuilder.create(frameworkConfig);
@@ -122,6 +115,14 @@ public class FlinkExpressionTraining3 {
         RexLiteral userA = rexBuilder.makeLiteral("userA");
         RexNode rexCall = relBuilder.call(SqlStdOperatorTable.EQUALS, username, userA);
         RelNode filter = relBuilder.filter(rexCall).build();
+        LogicalFilter logicalFilter = (LogicalFilter) filter;
+        RelNode rel = logicalFilter.getInput();
+        RelDataType inputRowType = rel.getRowType();
+        RexProgramBuilder programBuilder = new RexProgramBuilder(inputRowType, rexBuilder);
+        programBuilder.addIdentity();
+        programBuilder.addCondition(logicalFilter.getCondition());
+        RexProgram program = programBuilder.getProgram();
+
 
         FlinkOptimizer optimizer = new FlinkOptimizer(relBuilder, frameworkConfig);
         RelNode optimizeRelNode = optimizer.optimize3(filter);
