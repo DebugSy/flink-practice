@@ -2,10 +2,17 @@ package com.flink.demo.cases.case02;
 
 import com.flink.demo.cases.common.datasource.UrlClickDataSource;
 import org.apache.flink.api.common.functions.MapFunction;
+import org.apache.flink.api.common.functions.RichMapFunction;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.calcite.shaded.com.google.common.base.Strings;
+import org.apache.flink.configuration.Configuration;
+import org.apache.flink.dropwizard.metrics.DropwizardMeterWrapper;
+import org.apache.flink.metrics.Counter;
+import org.apache.flink.metrics.Meter;
+import org.apache.flink.metrics.MeterView;
+import org.apache.flink.metrics.MetricGroup;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
@@ -42,7 +49,7 @@ public class FlinkDataStreamTraining_join_function {
 
     public static void main(String[] args) throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        env.setParallelism(1);
+        env.setParallelism(4);
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 //        logger.info("Set timeCharacteristic {}", TimeCharacteristic.EventTime);
 
@@ -55,27 +62,67 @@ public class FlinkDataStreamTraining_join_function {
         }).keyBy(0);
 
         DataStream<Row> returns = keyedStream
-                .map((MapFunction<Tuple3<String, String, Timestamp>, Row>) value -> {
-                    Row row = new Row(value.getArity() + 1);//增加address一列
-                    int i;
-                    for (i = 0; i < value.getArity(); i++) {
-                        row.setField(i, value.getField(i));
-                    }
-                    String username = value.f0;
-                    if (!Strings.isNullOrEmpty(username)) {
-                        String address = users.get(username);
-                        logger.info("{} # {}", username, address);
-                        row.setField(i, address);
-                    } else {
-                        row.setField(i, "其他");
-                    }
-                    return row;
-                });
+                .map(new LookupFunction(users))
+                .setParallelism(1)
+                .name("lookup");
 
         returns.printToErr();
 
         env.execute("Flink Datastream Training join static data");
     }
 
+}
+
+class LookupFunction extends RichMapFunction<Tuple3<String, String, Timestamp>, Row> {
+
+    private Map<String, String> users;
+
+    private transient Meter meter;
+
+    private transient Counter counter;
+
+    private transient DropwizardMeterWrapper meterWrapper;
+
+    public LookupFunction(Map<String, String> users) {
+        this.users = users;
+    }
+
+    @Override
+    public void open(Configuration parameters) throws Exception {
+
+        MetricGroup customGroup = getRuntimeContext()
+                .getMetricGroup()
+                .addGroup("custom_group");
+
+        counter = customGroup.counter("hit_count");
+
+        meter = customGroup.meter("hit", new MeterView(counter, 5));
+
+        MetricGroup dropwizardGroup = getRuntimeContext()
+                .getMetricGroup()
+                .addGroup("dropwizard_group");
+        com.codahale.metrics.Meter dropwizardMeter = new com.codahale.metrics.Meter();
+        meterWrapper = dropwizardGroup.meter("hit", new DropwizardMeterWrapper(dropwizardMeter));
+    }
+
+    @Override
+    public Row map(Tuple3<String, String, Timestamp> value) throws Exception {
+        Row row = new Row(value.getArity() + 1);//增加address一列
+        int i;
+        for (i = 0; i < value.getArity(); i++) {
+            row.setField(i, value.getField(i));
+        }
+        String username = value.getField(0);
+        String address = users.get(username);
+        if (!Strings.isNullOrEmpty(address)) {
+            counter.inc();
+            meter.markEvent();
+            meterWrapper.markEvent();
+            row.setField(i, address);
+        } else {
+            row.setField(i, "其他");
+        }
+        return row;
+    }
 }
 
