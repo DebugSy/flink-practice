@@ -11,20 +11,22 @@ import java.sql.Timestamp;
 import java.util.Random;
 
 /**
- * Created by P0007 on 2019/9/3.
+ * Created by DebugSy on 2019/7/15.
+ *
+ * 用户活动事件数据源
  */
-public class UrlClickRowDataSource extends RichSourceFunction<Row> {
+public class UserRowDataSource extends RichSourceFunction<Row> {
 
-    private static final Logger logger = LoggerFactory.getLogger(UrlClickDataSource.class);
+    private static final Logger logger = LoggerFactory.getLogger(UserRowDataSource.class);
 
     private volatile boolean running = true;
 
-    public static String CLICK_FIELDS = "userId,username,url,clickTime";
+    public static String USER_FIELDS = "userId,username,address,activityTime";
 
-    public static String CLICK_FIELDS_WITH_ROWTIME = "userId,username,url,clickTime.rowtime";
+    public static String USER_FIELDS_WITH_ROWTIME = "userId,username,address,activityTime";
 
-    public static TypeInformation USER_CLICK_TYPEINFO = Types.ROW(
-            new String[]{"userId", "username", "url", "clickTime"},
+    public static TypeInformation USER_TYPEINFO = Types.ROW(
+            new String[]{"userId", "username", "address", "activityTime"},
             new TypeInformation[]{
                     Types.INT(),
                     Types.STRING(),
@@ -32,24 +34,26 @@ public class UrlClickRowDataSource extends RichSourceFunction<Row> {
                     Types.SQL_TIMESTAMP()
             });
 
+    private final Row row = new Row(4);
+
     @Override
     public void run(SourceContext<Row> ctx) throws Exception {
         Random random = new Random(System.currentTimeMillis());
         while (running) {
-            int indexOfThisSubtask = getRuntimeContext().getIndexOfThisSubtask();
-            Thread.sleep((indexOfThisSubtask + 1) * 1000);
+            Thread.sleep(1000);
             int nextInt = random.nextInt(5);
             Integer userId = 65 + nextInt;
-            String username = "user " + (char) ('A' + nextInt);
-            String url = "http://www.inforefiner.com/api/" + (char) ('H' + random.nextInt(4));
-            Timestamp clickTime = new Timestamp(System.currentTimeMillis());
-            Row row = new Row(4);
+            String username = "用户" + (char) ('A' + nextInt);
+            String address = "北京市朝阳区望京东湖街道" + nextInt + "号";
+            Timestamp activityTime = new Timestamp(System.currentTimeMillis());
+
             row.setField(0, userId);
             row.setField(1, username);
-            row.setField(2, url);
-            row.setField(3, clickTime);
+            row.setField(2, address);
+            row.setField(3, activityTime);
             logger.info("emit -> {}", row);
-            ctx.collect(row);
+            //直接在数据流源中指定时间戳和水印
+            ctx.collectWithTimestamp(row, activityTime.getTime());
         }
     }
 
@@ -57,6 +61,4 @@ public class UrlClickRowDataSource extends RichSourceFunction<Row> {
     public void cancel() {
         running = false;
     }
-
 }
-

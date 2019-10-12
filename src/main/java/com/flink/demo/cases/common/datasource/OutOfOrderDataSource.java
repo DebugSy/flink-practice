@@ -19,28 +19,30 @@ public class OutOfOrderDataSource extends RichSourceFunction<Tuple3<String, Stri
 
     private static final Logger logger = LoggerFactory.getLogger(OutOfOrderDataSource.class);
 
+    public static String CLICK_FIELDS = "userId,username,url,clickTime,rowtime.rowtime";
+
     private boolean running = true;
 
     private static List<List<String>> clicks = new ArrayList<>();
 
     static {
-        clicks.add(Arrays.asList("用户A", "http://127.0.0.1/api/I", "2019-07-23 23:27:29.876"));
-        clicks.add(Arrays.asList("用户E", "http://127.0.0.1/api/H", "2019-07-23 23:27:31.893"));
-        clicks.add(Arrays.asList("用户C", "http://127.0.0.1/api/I", "2019-07-23 23:27:32.897"));
-        clicks.add(Arrays.asList("用户B", "http://127.0.0.1/api/H", "2019-07-23 23:27:36.908"));
-        clicks.add(Arrays.asList("用户A", "http://127.0.0.1/api/J", "2019-07-23 23:27:27.019"));//晚到数据
-        clicks.add(Arrays.asList("用户E", "http://127.0.0.1/api/J", "2019-07-23 23:27:38.916"));
-        clicks.add(Arrays.asList("用户A", "http://127.0.0.1/api/J", "2019-07-23 23:27:27.189"));//晚到数据
-        clicks.add(Arrays.asList("用户B", "http://127.0.0.1/api/J", "2019-07-23 23:27:48.950"));
-        clicks.add(Arrays.asList("用户E", "http://127.0.0.1/api/K", "2019-07-23 23:27:53.960"));
-        clicks.add(Arrays.asList("用户C", "http://127.0.0.1/api/J", "2019-07-23 23:28:02.990"));
-        clicks.add(Arrays.asList("用户A", "http://127.0.0.1/api/K", "2019-07-23 23:27:30.960"));//晚到数据
-        clicks.add(Arrays.asList("用户E", "http://127.0.0.1/api/K", "2019-07-23 23:28:08.012"));
-        clicks.add(Arrays.asList("用户B", "http://127.0.0.1/api/K", "2019-07-23 23:28:12.029"));
-        clicks.add(Arrays.asList("用户E", "http://127.0.0.1/api/I", "2019-07-23 23:27:39.918"));//晚到数据
-        clicks.add(Arrays.asList("用户C", "http://127.0.0.1/api/K", "2019-07-23 23:27:43.931"));//晚到数据
-        clicks.add(Arrays.asList("用户B", "http://127.0.0.1/api/K", "2019-07-23 23:28:20.000"));
-        clicks.add(Arrays.asList("用户C", "http://127.0.0.1/api/K", "2019-07-23 23:28:20.001"));
+        clicks.add(Arrays.asList("65", "用户A", "http://127.0.0.1/api/I", "2019-07-23 23:27:29.876"));
+        clicks.add(Arrays.asList("", "用户E", "http://127.0.0.1/api/H", "2019-07-23 23:27:31.893"));
+        clicks.add(Arrays.asList("", "用户C", "http://127.0.0.1/api/I", "2019-07-23 23:27:32.897"));
+        clicks.add(Arrays.asList("", "用户B", "http://127.0.0.1/api/H", "2019-07-23 23:27:36.908"));
+        clicks.add(Arrays.asList("", "用户A", "http://127.0.0.1/api/J", "2019-07-23 23:27:27.019"));//晚到数据
+        clicks.add(Arrays.asList("", "用户E", "http://127.0.0.1/api/J", "2019-07-23 23:27:38.916"));
+        clicks.add(Arrays.asList("", "用户A", "http://127.0.0.1/api/J", "2019-07-23 23:27:27.189"));//晚到数据
+        clicks.add(Arrays.asList("", "用户B", "http://127.0.0.1/api/J", "2019-07-23 23:27:48.950"));
+        clicks.add(Arrays.asList("", "用户E", "http://127.0.0.1/api/K", "2019-07-23 23:27:53.960"));
+        clicks.add(Arrays.asList("", "用户C", "http://127.0.0.1/api/J", "2019-07-23 23:28:02.990"));
+        clicks.add(Arrays.asList("", "用户A", "http://127.0.0.1/api/K", "2019-07-23 23:27:30.960"));//晚到数据
+        clicks.add(Arrays.asList("", "用户E", "http://127.0.0.1/api/K", "2019-07-23 23:28:08.012"));
+        clicks.add(Arrays.asList("", "用户B", "http://127.0.0.1/api/K", "2019-07-23 23:28:12.029"));
+        clicks.add(Arrays.asList("", "用户E", "http://127.0.0.1/api/I", "2019-07-23 23:27:39.918"));//晚到数据
+        clicks.add(Arrays.asList("", "用户C", "http://127.0.0.1/api/K", "2019-07-23 23:27:43.931"));//晚到数据
+        clicks.add(Arrays.asList("", "用户B", "http://127.0.0.1/api/K", "2019-07-23 23:28:20.000"));
+        clicks.add(Arrays.asList("", "用户C", "http://127.0.0.1/api/K", "2019-07-23 23:28:20.001"));
     }
 
     @Override
