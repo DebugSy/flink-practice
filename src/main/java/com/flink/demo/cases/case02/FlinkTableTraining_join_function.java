@@ -4,6 +4,7 @@ import com.flink.demo.cases.common.datasource.UrlClickDataSource;
 import com.flink.demo.cases.common.functions.udtf.UserTableFunction;
 import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.api.java.tuple.Tuple3;
+import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
@@ -31,11 +32,12 @@ public class FlinkTableTraining_join_function {
         env.setParallelism(1);
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
-        DataStreamSource<Tuple3<String, String, Timestamp>> clickSource = env.addSource(new UrlClickDataSource());
-        KeyedStream<Tuple3<String, String, Timestamp>, Tuple> keyedStream = clickSource.assignTimestampsAndWatermarks(new AscendingTimestampExtractor<Tuple3<String, String, Timestamp>>() {
+        DataStreamSource<Tuple4<Integer, String, String, Timestamp>> clickSource = env.addSource(new UrlClickDataSource());
+        KeyedStream<Tuple4<Integer, String, String, Timestamp>, Tuple> keyedStream = clickSource.assignTimestampsAndWatermarks(
+                new AscendingTimestampExtractor<Tuple4<Integer, String, String, Timestamp>>() {
             @Override
-            public long extractAscendingTimestamp(Tuple3<String, String, Timestamp> element) {
-                return element.f2.getTime();
+            public long extractAscendingTimestamp(Tuple4<Integer, String, String, Timestamp> element) {
+                return element.f3.getTime();
             }
         }).keyBy(0);
 

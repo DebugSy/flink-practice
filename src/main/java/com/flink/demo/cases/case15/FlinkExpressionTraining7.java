@@ -67,6 +67,15 @@ public class FlinkExpressionTraining7 {
                     Types.INT()
             });
 
+    private static String hopWindowSql = "select username, count(*) as cnt, " +
+            "HOP_ROWTIME(rowtime, INTERVAL '5' SECOND, INTERVAL '10' SECOND) as window_rowtime, " +
+            "HOP_START(rowtime, INTERVAL '5' SECOND, INTERVAL '10' SECOND) as window_start, " +
+            "HOP_END(rowtime, INTERVAL '5' SECOND, INTERVAL '10' SECOND) as window_end " +
+            "from clicks " +
+            "where url like '%/api/H%'" +
+            "group by username, " +
+            "HOP(rowtime, INTERVAL '5' SECOND, INTERVAL '10' SECOND)";
+
     public static void main(String[] args) throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         StreamTableEnvironment tEnv = StreamTableEnvironment.create(env);
@@ -89,28 +98,15 @@ public class FlinkExpressionTraining7 {
         FlinkRelBuilder relBuilder = tEnv.relBuilder();
 
         FlinkPlannerImpl planner = new FlinkPlannerImpl(tEnv.getFrameworkConfig(), tEnv.getPlanner(), tEnv.getTypeFactory());
-        SqlNode sqlNode = planner.parse("select username, case when username like '%户A' then 1 else 0 end as tag1 " +
-                " from clicks where url like '%http://www.inforefiner.com/api%' ");
+        SqlNode sqlNode = planner.parse(hopWindowSql);
         SqlNode validateSqlNode = planner.validate(sqlNode);
         RelRoot relRoot = planner.rel(validateSqlNode);
         RelNode relNode = relRoot.rel;
         RelDataType rowType = relNode.getRowType();
 
-        //逻辑计划优化阶段
-        FlinkOptimizer2 optimizer = new FlinkOptimizer2(relBuilder);
-        RelNode optimizeRelNode = optimizer.optimize3(relNode);
+        RelNode dataStreamPlan = tEnv.optimize(relNode, true);
 
-        //物理计划优化阶段
-        RelNode physicalPlan = tEnv.optimizePhysicalPlan(optimizeRelNode, FlinkConventions.DATASTREAM());
-        RuleSet decoRuleSet = tEnv.getDecoRuleSet();
-        RelNode finalRelNode = tEnv.runHepPlannerSequentially(
-                HepMatchOrder.BOTTOM_UP,
-                decoRuleSet,
-                physicalPlan,
-                physicalPlan.getTraitSet()
-        );
-
-        DataStreamCalc datastreamCalc = (DataStreamCalc) finalRelNode;
+        DataStreamCalc datastreamCalc = (DataStreamCalc) dataStreamPlan;
         RexProgram calcProgram = datastreamCalc.getProgram();
 
         //提取结果字段

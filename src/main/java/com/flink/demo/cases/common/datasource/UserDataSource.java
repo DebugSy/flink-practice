@@ -2,6 +2,7 @@ package com.flink.demo.cases.common.datasource;
 
 import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.streaming.api.functions.source.RichSourceFunction;
+import org.apache.flink.streaming.api.watermark.Watermark;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +39,7 @@ public class UserDataSource extends RichSourceFunction<Tuple4<Integer, String, S
             Tuple4<Integer, String, String, Timestamp> tuple4 = new Tuple4<>(userId, username, address, activityTime);
             logger.info("emit -> {}", tuple4);
             //直接在数据流源中指定时间戳和水印
-            ctx.collectWithTimestamp(tuple4, activityTime.getTime());
+            ctx.collect(tuple4);
         }
     }
 

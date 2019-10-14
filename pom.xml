@@ -113,6 +113,11 @@
             <artifactId>flink-metrics-influxdb_${scala.version}</artifactId>
             <version>${flink.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-metrics-slf4j</artifactId>
+            <version>${flink.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>redis.clients</groupId>
@@ -141,6 +146,23 @@
             <artifactId>hadoop-hdfs</artifactId>
             <version>2.7.4</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.8</version>
+        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.apache.calcite</groupId>-->
+<!--            <artifactId>calcite-core</artifactId>-->
+<!--            <version>1.17.0</version>-->
+<!--            <exclusions>-->
+<!--                <exclusion>-->
+<!--                    <artifactId>protobuf-java</artifactId>-->
+<!--                    <groupId>com.google.protobuf</groupId>-->
+<!--                </exclusion>-->
+<!--            </exclusions>-->
+<!--        </dependency>-->
 
 
         <!--logging-->

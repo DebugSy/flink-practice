@@ -142,7 +142,11 @@ public class FlinkTraining_filter {
                 null,
                 null);
 
-//        generator.generateResultExpression()
+//        generator.generateResultExpression(
+//                userClickTypeInfo,
+//                ((RowTypeInfo) userClickTypeInfo).getFieldNames(),
+//
+//                );
 
         GeneratedFunction<ProcessFunction, Row> filterFunction = generator.generateFunction(
                 "FilterFunction",

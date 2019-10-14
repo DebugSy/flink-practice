@@ -5,6 +5,7 @@ import com.flink.demo.cases.common.functions.udf.Timestamp2Timezone;
 import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
+import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
@@ -58,14 +59,14 @@ public class FlinkSqlTraining_custom_function {
         StreamTableEnvironment tableEnv = StreamTableEnvironment.create(env);
         tableEnv.registerFunction("to_date", new Timestamp2Timezone());
 
-        DataStreamSource<Tuple3<String, String, Timestamp>> sourceStream = env.addSource(new UrlClickDataSource());
+        DataStreamSource<Tuple4<Integer, String, String, Timestamp>> sourceStream = env.addSource(new UrlClickDataSource());
 
-        KeyedStream<Tuple3<String, String, Timestamp>, Tuple> keyedStream = sourceStream
+        KeyedStream<Tuple4<Integer, String, String, Timestamp>, Tuple> keyedStream = sourceStream
                 .assignTimestampsAndWatermarks(
-                        new AscendingTimestampExtractor<Tuple3<String, String, Timestamp>>() {
+                        new AscendingTimestampExtractor<Tuple4<Integer, String, String, Timestamp>>() {
                             @Override
-                            public long extractAscendingTimestamp(Tuple3<String, String, Timestamp> element) {
-                                return element.f2.getTime();
+                            public long extractAscendingTimestamp(Tuple4<Integer, String, String, Timestamp> element) {
+                                return element.f3.getTime();
                             }
                         }).keyBy(0);
 

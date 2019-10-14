@@ -2,9 +2,11 @@ package com.flink.demo.cases.case02;
 
 import com.flink.demo.cases.common.datasource.UrlClickRowDataSource;
 import com.flink.demo.cases.common.datasource.UserRowDataSource;
+import org.apache.flink.api.common.functions.CoGroupFunction;
 import org.apache.flink.api.common.functions.JoinFunction;
 import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.streaming.api.TimeCharacteristic;
+import org.apache.flink.streaming.api.datastream.CoGroupedStreams;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -12,24 +14,18 @@ import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExt
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.types.Row;
+import org.apache.flink.util.Collector;
 
 import java.sql.Timestamp;
+import java.util.Iterator;
 
 /**
  * Created by P0007 on 2019/10/12.
  *
- * join的实现是基于coGroup实现的
- * org.apache.flink.streaming.api.datastream.JoinedStreams:457
- *
- * public void coGroup(Iterable<T1> first, Iterable<T2> second, Collector<T> out) throws Exception {
- * 			for (T1 val1: first) {
- * 				for (T2 val2: second) {
- * 					out.collect(wrappedFunction.join(val1, val2));
- *              }
- *          }
- *  }
+ * java case 02
+ * Flink Stream join 训练 - jcoGroup函数训练
  */
-public class FlinkStreamTraining_join {
+public class FlinkStreamTraining_coGroup {
 
     public static void main(String[] args) throws Exception {
 
@@ -58,7 +54,8 @@ public class FlinkStreamTraining_join {
         int arity = clickStream.getType().getArity() + userStream.getType().getArity();
         final Row result = new Row(arity);
 
-        DataStream<Row> dataStream = clickStreamAndWatermarks.join(userStreamAndWatermarks)
+
+        DataStream<Row> dataStream = new CoGroupedStreams<>(clickStreamAndWatermarks, userStreamAndWatermarks)
                 .where(new KeySelector<Row, Object>() {
                     @Override
                     public Object getKey(Row value) throws Exception {
@@ -72,20 +69,28 @@ public class FlinkStreamTraining_join {
                     }
                 })
                 .window(TumblingEventTimeWindows.of(Time.seconds(5)))
-                .apply(new JoinFunction<Row, Row, Row>() {
+                .apply(new CoGroupFunction<Row, Row, Row>() {
                     @Override
-                    public Row join(Row first, Row second) throws Exception {
-                        for (int i = 0; i < first.getArity(); i++) {
-                            result.setField(i, first.getField(i));
+                    public void coGroup(Iterable<Row> first, Iterable<Row> second, Collector<Row> out) throws Exception {
+                        for (Row firstRow : first) {
+                            for (Row secondRow : second) {
+                                System.err.println("first:" + first + ", second:" + second);
+                                int i = 0;
+                                for (int j = 0; j < firstRow.getArity(); j++) {
+                                    result.setField(i, firstRow.getField(j));
+                                    i++;
+                                }
+                                for (int j = 0; j < secondRow.getArity(); j++) {
+                                    result.setField(i, secondRow.getField(j));
+                                    i++;
+                                }
+                                out.collect(result);
+                            }
                         }
-                        for (int i = first.getArity(); i < first.getArity() + second.getArity(); i++) {
-                            result.setField(i, second.getField(i - first.getArity()));
-                        }
-                        return result;
                     }
                 });
 
-        dataStream.printToErr();
+        dataStream.print();
 
         env.execute("Flink Stream Join Training");
     }

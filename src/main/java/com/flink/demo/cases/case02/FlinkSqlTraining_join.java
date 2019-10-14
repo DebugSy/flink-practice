@@ -32,10 +32,6 @@ public class FlinkSqlTraining_join {
 
     private static final Logger logger = LoggerFactory.getLogger(FlinkSqlTraining_join.class);
 
-    private static String clickFields = "username,url,clickTime";
-
-    private static String userFields = "userId,username,address,activityTime";
-
     /**
      * 两个流基于时间窗口的join
      */
@@ -51,31 +47,34 @@ public class FlinkSqlTraining_join {
 
         StreamTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(env);
 
-        DataStreamSource<Tuple3<String, String, Timestamp>> clickStream = env.addSource(new UrlClickDataSource());
+        DataStreamSource<Tuple4<Integer, String, String, Timestamp>> clickStream = env.addSource(new UrlClickDataSource());
 
         //通过时间戳分配器/水印生成器指定时间戳和水印
-        KeyedStream<Tuple3<String, String, Timestamp>, Tuple> keyedClickStream = clickStream
-                .assignTimestampsAndWatermarks(new AscendingTimestampExtractor<Tuple3<String, String, Timestamp>>() {
+        KeyedStream<Tuple4<Integer, String, String, Timestamp>, Tuple> keyedClickStream = clickStream
+                .assignTimestampsAndWatermarks(new AscendingTimestampExtractor<Tuple4<Integer, String, String, Timestamp>>() {
             @Override
-            public long extractAscendingTimestamp(Tuple3<String, String, Timestamp> element) {
-                return element.f2.getTime();
+            public long extractAscendingTimestamp(Tuple4<Integer, String, String, Timestamp> element) {
+                return element.f3.getTime();
             }
         }).keyBy(0);
 
         DataStreamSource<Tuple4<Integer, String, String, Timestamp>> userStream = env.addSource(new UserDataSource());
+        //通过时间戳分配器/水印生成器指定时间戳和水印
+        KeyedStream<Tuple4<Integer, String, String, Timestamp>, Tuple> keyedUserStream = userStream
+                .assignTimestampsAndWatermarks(new AscendingTimestampExtractor<Tuple4<Integer, String, String, Timestamp>>() {
+                    @Override
+                    public long extractAscendingTimestamp(Tuple4<Integer, String, String, Timestamp> element) {
+                        return element.f3.getTime();
+                    }
+                }).keyBy(0);
 
-        tableEnv.registerDataStream("clicks", keyedClickStream, clickFields);
-        tableEnv.registerDataStream("users", userStream, userFields);
+        tableEnv.registerDataStream("clicks", keyedClickStream, UrlClickDataSource.CLICK_FIELDS);
+        tableEnv.registerDataStream("users", keyedUserStream, UserDataSource.USER_FIELDS);
 
         Table sqlQuery = tableEnv.sqlQuery(innerJoinWithTimeWindowSql);
 
         DataStream<Row> sinkStream = tableEnv.toAppendStream(sqlQuery, Row.class);
-        sinkStream.addSink(new SinkFunction<Row>() {
-            @Override
-            public void invoke(Row value, Context context) throws Exception {
-                logger.error("print {}", value);
-            }
-        }).name("Print to Std.Error");
+        sinkStream.printToErr();
 
 
         env.execute("Flink SQL Training");
