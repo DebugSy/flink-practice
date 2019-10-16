@@ -98,7 +98,8 @@ public class FlinkExpressionTraining7 {
         FlinkRelBuilder relBuilder = tEnv.relBuilder();
 
         FlinkPlannerImpl planner = new FlinkPlannerImpl(tEnv.getFrameworkConfig(), tEnv.getPlanner(), tEnv.getTypeFactory());
-        SqlNode sqlNode = planner.parse(hopWindowSql);
+        SqlNode sqlNode = planner.parse("select username, case when username like '%户A' then 1 else 0 end as tag1 " +
+                " from clicks where url like '%http://www.inforefiner.com/api%' ");
         SqlNode validateSqlNode = planner.validate(sqlNode);
         RelRoot relRoot = planner.rel(validateSqlNode);
         RelNode relNode = relRoot.rel;
