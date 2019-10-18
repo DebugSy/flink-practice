@@ -11,11 +11,8 @@ import java.util.Date;
  */
 public class Timestamp2Timezone extends ScalarFunction {
 
-    public String eval(Timestamp timestamp, String dateFormat) {
-        SimpleDateFormat formater = new SimpleDateFormat(dateFormat);
-        Date date = new Date(timestamp.getTime());
-        String dateStr = formater.format(date);
-        return dateStr;
+    public String eval(String timestamp) {
+        return timestamp + "xxxx";
     }
 
 }
