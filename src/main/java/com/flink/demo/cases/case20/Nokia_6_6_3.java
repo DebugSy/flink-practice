@@ -1,6 +1,7 @@
 package com.flink.demo.cases.case20;
 
 import com.flink.demo.cases.common.datasource.CEPDataSource;
+import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -13,24 +14,19 @@ import org.apache.flink.types.Row;
 
 import java.sql.Timestamp;
 
-public class Nokia_6_6_2 {
+public class Nokia_6_6_3 {
 
-    public static String MAP_SQL = "select " +
-            "CDR_ID,USR_ID,USER_BRAND,ORD_STS,RCV_AMT,OFF_FLAG,POST_TM,POST_TM / 60000 * 60000 as truncatedTime " +
-            "from cep_source";
-
-    public static String CEP_SQL = "select \n" +
-            "rtc_current_time(CAST(TUMBLE_PROCTIME(procTime, INTERVAL '2' SECOND) as varchar)) as t1,\n" +
-            "truncatedTime as t2,\n" +
-            "rtc_current_time(CAST(TUMBLE_PROCTIME(procTime, INTERVAL '2' SECOND) as varchar)) - truncatedTime as proc_time \n" +
-            "from mapResultTable \n" +
-            "group by TUMBLE(procTime, INTERVAL '2' SECOND), \n" +
-            "truncatedTime \n";
+    public static String CEP_SQL = "select " +
+            "rtc_agg(OFF_FLAG) as a1, " +
+            "TUMBLE_START(POST_TM, INTERVAL '2' SECOND) as window_start, " +
+            "TUMBLE_END(POST_TM, INTERVAL '2' SECOND) as window_end " +
+            "from cep_source " +
+            "group by TUMBLE(POST_TM, INTERVAL '2' SECOND)";
 
     public static void main(String[] args) throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(1);
-        env.setStreamTimeCharacteristic(TimeCharacteristic.ProcessingTime);
+        env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
         StreamTableEnvironment tableEnv = StreamTableEnvironment.create(env);
 
@@ -38,16 +34,23 @@ public class Nokia_6_6_2 {
                 .addSource(new CEPDataSource())
                 .returns(CEPDataSource.CLICK_TYPEINFO);
 
-        tableEnv.registerDataStream("cep_source", cepSource, CEPDataSource.CLICK_FIELDS);
-        tableEnv.registerFunction("rtc_current_time", new TimeUDF());
+        //通过时间戳分配器/水印生成器指定时间戳和水印
+        KeyedStream<Row, Tuple> keyedClickStream = cepSource
+                .assignTimestampsAndWatermarks(new AscendingTimestampExtractor<Row>() {
+                    @Override
+                    public long extractAscendingTimestamp(Row element) {
+                        return Timestamp.valueOf(element.getField(6).toString()).getTime();
+                    }
+                }).keyBy(0);
 
-        Table mapResult = tableEnv.sqlQuery(MAP_SQL);
-        DataStream<Row> rowDataStream = tableEnv.toAppendStream(mapResult, mapResult.getSchema().toRowType());
-        tableEnv.registerDataStream("mapResultTable", rowDataStream,  CEPDataSource.CLICK_FIELDS_truncatedTime);
+        tableEnv.registerDataStream("cep_source", keyedClickStream, CEPDataSource.CLICK_FIELDS);
+        tableEnv.registerFunction("rtc_current_time", new TimeUDF());
+        tableEnv.registerFunction("rtc_agg", new NokiaUDAF());
 
         Table sqlQuery = tableEnv.sqlQuery(CEP_SQL);
 
         DataStream<Row> sinkStream = tableEnv.toAppendStream(sqlQuery, Row.class);
+        TypeInformation<Row> type = sinkStream.getType();
         sinkStream.printToErr();
 
 

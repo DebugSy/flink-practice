@@ -25,7 +25,7 @@ import java.util.List;
  * 需求：检测用户当前地址是否包含在之前2小时去过的地址中
  * 参考flink interval join实现
  */
-public class FlinkIntervalFilterTest {
+public class FlinkIntervalFilterOperatorTest {
 
     private static TypeInformation<Tuple4<Integer, String, String, Timestamp>> valueInfo =
             TypeInformation.of(new TypeHint<Tuple4<Integer, String, String, Timestamp>>() {

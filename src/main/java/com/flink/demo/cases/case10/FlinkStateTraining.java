@@ -8,7 +8,9 @@ import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.api.common.time.Time;
 import org.apache.flink.api.common.typeinfo.TypeHint;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.client.program.ContextEnvironment;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.contrib.streaming.state.RocksDBStateBackend;
 import org.apache.flink.runtime.state.StateBackend;
@@ -28,15 +30,15 @@ public class FlinkStateTraining {
 
     public static void main(String[] args) throws Exception {
         Configuration configuration = new Configuration();
-//        configuration.setString("queryable-state.enable", "true");
+        configuration.setString("queryable-state.enable", "true");
 //        configuration.setString("metrics.reporter.influxdb.class", "org.apache.flink.metrics.influxdb.InfluxdbReporter");
 //        configuration.setString("metrics.reporter.influxdb.host", "localhost");
 //        configuration.setString("metrics.reporter.influxdb.port", "8086");
 //        configuration.setString("metrics.reporter.influxdb.db", "flink_metrics");
 //        configuration.setString("metrics.reporter.influxdb.username", "admin");
 //        configuration.setString("metrics.reporter.influxdb.password", "admin");
-        configuration.setString("metrics.reporter.slf4j.class", "org.apache.flink.metrics.slf4j.Slf4jReporter");
-        configuration.setString("metrics.reporter.slf4j.interval", "10 SECONDS");
+//        configuration.setString("metrics.reporter.slf4j.class", "org.apache.flink.metrics.slf4j.Slf4jReporter");
+//        configuration.setString("metrics.reporter.slf4j.interval", "10 SECONDS");
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironment(1, configuration);
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
@@ -45,9 +47,9 @@ public class FlinkStateTraining {
         env.getCheckpointConfig().setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE);
         env.getCheckpointConfig().setMinPauseBetweenCheckpoints(500);
         env.getCheckpointConfig().setCheckpointTimeout(1000 * 60);
-        env.getCheckpointConfig().setMaxConcurrentCheckpoints(1);
+        env.getCheckpointConfig().setMaxConcurrentCheckpoints(10);
         env.getCheckpointConfig().enableExternalizedCheckpoints(CheckpointConfig.ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION);
-//        env.setStateBackend((StateBackend)new RocksDBStateBackend("file:///tmp/flink-checkpoints/"));
+        env.setStateBackend((StateBackend)new RocksDBStateBackend("file:///tmp/flink-checkpoints/"));
 
         env.setRestartStrategy(RestartStrategies.fixedDelayRestart(3, Time.seconds(10)));
 

@@ -7,6 +7,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.api.java.tuple.Tuple3;
+import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
@@ -64,9 +65,9 @@ public class FlinkSqlTraining_table2ds2table {
 
         StreamTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(env);
 
-        DataStreamSource<Tuple3<String, String, Timestamp>> sourceStream = env.addSource(new OutOfOrderDataSource());
+        DataStreamSource<Tuple4<Integer, String, String, Timestamp>> sourceStream = env.addSource(new OutOfOrderDataSource());
 
-        KeyedStream<Tuple3<String, String, Timestamp>, Tuple> keyedStream = sourceStream
+        KeyedStream<Tuple4<Integer, String, String, Timestamp>, Tuple> keyedStream = sourceStream
                 .assignTimestampsAndWatermarks(new CustomTimestampExtractor(Time.seconds(0))).keyBy(0);
 
         tableEnv.registerDataStream("clicks", keyedStream, fields);

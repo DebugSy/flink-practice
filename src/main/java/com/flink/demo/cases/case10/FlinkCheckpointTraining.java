@@ -3,7 +3,9 @@ package com.flink.demo.cases.case10;
 import com.flink.demo.cases.common.datasource.UrlClickRowDataSource;
 import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.contrib.streaming.state.RocksDBStateBackend;
+import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings;
 import org.apache.flink.runtime.state.StateBackend;
 import org.apache.flink.runtime.state.filesystem.FsStateBackend;
 import org.apache.flink.streaming.api.CheckpointingMode;
@@ -23,6 +25,9 @@ import java.sql.Timestamp;
 public class FlinkCheckpointTraining {
 
     public static void main(String[] args) throws Exception {
+//        Configuration configuration = new Configuration();
+//        configuration.setString("state.savepoints.dir", "file:///tmp/flink/savepoint-dir");
+
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
         env.setParallelism(1);
@@ -32,7 +37,7 @@ public class FlinkCheckpointTraining {
         env.getCheckpointConfig().setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE);
         env.getCheckpointConfig().setMinPauseBetweenCheckpoints(500);
         env.getCheckpointConfig().setCheckpointTimeout(1000 * 10);
-        env.getCheckpointConfig().setMaxConcurrentCheckpoints(1);
+        env.getCheckpointConfig().setMaxConcurrentCheckpoints(10);
         env.getCheckpointConfig().enableExternalizedCheckpoints(CheckpointConfig.ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION);
         env.setStateBackend((StateBackend)new FsStateBackend("file:///tmp/flink/checkpint-dir"));
 
@@ -88,6 +93,10 @@ public class FlinkCheckpointTraining {
                 .name("Aggregate");
 
         aggregate.printToErr();
+
+
+        SavepointRestoreSettings savepointRestoreSettings = SavepointRestoreSettings.forPath("file:///tmp/flink/savepoint-dir/savepoint-941a5d-f75f788850bf", true);
+        env.getStreamGraph().getJobGraph().setSavepointRestoreSettings(savepointRestoreSettings);
 
         env.execute("Flink Checkpoint Training");
 

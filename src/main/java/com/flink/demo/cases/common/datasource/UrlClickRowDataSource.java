@@ -21,7 +21,7 @@ public class UrlClickRowDataSource extends RichSourceFunction<Row> {
 
     public static String CLICK_FIELDS = "userId,username,url,clickTime";
 
-    public static String CLICK_FIELDS_WITH_ROWTIME = "userId,username,url,clickTime.rowtime";
+    public static String CLICK_FIELDS_WITH_ROWTIME = "userId,username,url,clickTime,rowtime.rowtime";
 
     public static TypeInformation USER_CLICK_TYPEINFO = Types.ROW(
             new String[]{"userId", "username", "url", "clickTime"},

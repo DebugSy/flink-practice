@@ -8,7 +8,6 @@ import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeSystem;
 import org.apache.calcite.schema.impl.AbstractTable;
 import org.apache.calcite.sql.SqlNode;
-import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.sql.parser.SqlParser;
 import org.apache.calcite.sql.type.BasicSqlType;
@@ -59,8 +58,12 @@ public class CalciteTraining {
 
         Planner planner = Frameworks.getPlanner(config);
         SqlNode originSqlNode = planner.parse("select * from test where id > 10");
+
+        SqlParser parser = SqlParser.create("select * from test where id > 10");
+        SqlNode sqlNode1 = parser.parseQuery();
+
         SqlNode sqlNode = planner.validate(originSqlNode);
-        RelRoot relRoot = planner.rel(sqlNode);
+        RelRoot relRoot = planner.rel(sqlNode1);
         System.out.println(RelOptUtil.toString(relRoot.rel, ALL_ATTRIBUTES));
     }
 

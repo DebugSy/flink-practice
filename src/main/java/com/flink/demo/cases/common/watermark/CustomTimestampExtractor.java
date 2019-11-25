@@ -1,6 +1,7 @@
 package com.flink.demo.cases.common.watermark;
 
 import org.apache.flink.api.java.tuple.Tuple3;
+import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.streaming.api.functions.AssignerWithPeriodicWatermarks;
 import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.flink.streaming.api.windowing.time.Time;
@@ -11,7 +12,7 @@ import java.sql.Timestamp;
 /**
  * Created by DebugSy on 2019/7/23.
  */
-public class CustomTimestampExtractor implements AssignerWithPeriodicWatermarks<Tuple3<String, String, Timestamp>> {
+public class CustomTimestampExtractor implements AssignerWithPeriodicWatermarks<Tuple4<Integer, String, String, Timestamp>> {
 
     /**
      * 由于flink时间与北京时间差8 hours，在指定水印时增加8小时
@@ -33,8 +34,8 @@ public class CustomTimestampExtractor implements AssignerWithPeriodicWatermarks<
     }
 
     @Override
-    public long extractTimestamp(Tuple3<String, String, Timestamp> element, long previousElementTimestamp) {
-        long time = element.f2.getTime() + LATENCY_8_HOURS;
+    public long extractTimestamp(Tuple4<Integer, String, String, Timestamp> element, long previousElementTimestamp) {
+        long time = element.f3.getTime() + LATENCY_8_HOURS;
         currentTimeStamp = time;
         return time;
     }

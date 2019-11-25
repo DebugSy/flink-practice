@@ -40,6 +40,11 @@ public class UserTableFunction extends TableFunction<Row> {
     }
 
     public void eval(String username) {
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         if (users.containsKey(username)) {
             Row row = users.get(username);
             logger.info("get row {} with key {}", row, username);

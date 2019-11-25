@@ -1,24 +1,17 @@
 package com.flink.demo.cases.case08;
 
-import com.flink.demo.cases.common.datasource.UrlClickDataSource;
+import com.flink.demo.cases.common.datasource.UrlClickRowDataSource;
 import com.flink.demo.cases.common.functions.udf.Timestamp2Timezone;
-import org.apache.flink.api.java.tuple.Tuple;
+import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.api.java.tuple.Tuple3;
-import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
-import org.apache.flink.streaming.api.datastream.DataStreamSource;
-import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor;
 import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.apache.flink.types.Row;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.sql.Timestamp;
 
 /**
  * Created by DebugSy on 2019/7/10.
@@ -32,12 +25,9 @@ public class FlinkSqlTraining_custom_function {
 
     private static final Logger logger = LoggerFactory.getLogger(FlinkSqlTraining_custom_function.class);
 
-    private static String fields = "username,url,clickTime,rowtime.rowtime";
-
     //CONCAT('yyyy-MM-dd', U&'\0054', 'HH:mm:ss.SSSZ') 使用unicode
 
-    private static String tumbleWindowSql = "select U&'\\0026',username," +
-            "to_date(clickTime, 'yyyy-MM-dd HH:mm:ss.SSSZ') as zoneTime " +
+    private static String tumbleWindowSql = "select U&'\\0026',username,udf_test(username) as subname " +
             "from clicks";
 
     private static String hopWindowSql = "select username, count(*) as cnt, " +
@@ -57,22 +47,16 @@ public class FlinkSqlTraining_custom_function {
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
         StreamTableEnvironment tableEnv = StreamTableEnvironment.create(env);
-        tableEnv.registerFunction("to_date", new Timestamp2Timezone());
+        tableEnv.registerFunction("udf_test", new Timestamp2Timezone());
 
-        DataStreamSource<Tuple4<Integer, String, String, Timestamp>> sourceStream = env.addSource(new UrlClickDataSource());
+        DataStream<Row> sourceStream = env
+                .addSource(new UrlClickRowDataSource())
+                .returns(UrlClickRowDataSource.USER_CLICK_TYPEINFO);
+        TypeInformation<Row> type = sourceStream.getType();
 
-        KeyedStream<Tuple4<Integer, String, String, Timestamp>, Tuple> keyedStream = sourceStream
-                .assignTimestampsAndWatermarks(
-                        new AscendingTimestampExtractor<Tuple4<Integer, String, String, Timestamp>>() {
-                            @Override
-                            public long extractAscendingTimestamp(Tuple4<Integer, String, String, Timestamp> element) {
-                                return element.f3.getTime();
-                            }
-                        }).keyBy(0);
+        tableEnv.registerDataStream("clicks", sourceStream, UrlClickRowDataSource.CLICK_FIELDS_WITH_ROWTIME);
 
-        tableEnv.registerDataStream("clicks", keyedStream, fields);
-
-        Table sqlQuery = tableEnv.sqlQuery(tumbleWindowSql);
+        Table sqlQuery = tableEnv.sqlQuery(hopWindowSql);
 
         DataStream<Tuple2<Boolean, Row>> sinkStream = tableEnv.toRetractStream(sqlQuery, Row.class);
         sinkStream.printToErr();

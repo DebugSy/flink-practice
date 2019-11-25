@@ -17,6 +17,7 @@ import org.apache.calcite.tools.RuleSet;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.api.java.tuple.Tuple3;
+import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
@@ -73,11 +74,12 @@ public class FlinkExpressionTraining5 {
         StreamTableEnvironment tEnv = StreamTableEnvironment.create(env);
         env.setParallelism(1);
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
-        DataStreamSource<Tuple3<String, String, Timestamp>> sourceStream = env.addSource(new OutOfOrderDataSource());
-        KeyedStream<Tuple3<String, String, Timestamp>, Tuple> keyedStream = sourceStream.assignTimestampsAndWatermarks(new AscendingTimestampExtractor<Tuple3<String, String, Timestamp>>() {
+        DataStreamSource<Tuple4<Integer, String, String, Timestamp>> sourceStream = env.addSource(new OutOfOrderDataSource());
+        KeyedStream<Tuple4<Integer, String, String, Timestamp>, Tuple> keyedStream = sourceStream.assignTimestampsAndWatermarks(
+                new AscendingTimestampExtractor<Tuple4<Integer, String, String, Timestamp>>() {
             @Override
-            public long extractAscendingTimestamp(Tuple3<String, String, Timestamp> element) {
-                return element.f2.getTime();
+            public long extractAscendingTimestamp(Tuple4<Integer, String, String, Timestamp> element) {
+                return element.f3.getTime();
             }
         }).keyBy(0);
 

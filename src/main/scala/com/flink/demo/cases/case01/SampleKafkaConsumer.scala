@@ -25,8 +25,8 @@ class SampleKafkaConsumer(bootstrap: String, topics: List[String]) {
   private[this] def configKafka(): Properties = {
     val props = new Properties()
     props.put("bootstrap.servers", bootstrap)
-    props.put("group.id", "test")
-    props.put("enable.auto.commit", "true")
+    props.put("group.id", "test1")
+    props.put("enable.auto.commit", "false")
     props.put("auto.commit.interval.ms", "1000")
     props.put("session.timeout.ms", "30000")
     props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer")
@@ -50,7 +50,7 @@ class SampleKafkaConsumer(bootstrap: String, topics: List[String]) {
 object SampleKafkaConsumer {
 
   def main(args: Array[String]): Unit = {
-    val kafkaConsumer = new SampleKafkaConsumer("localhost:9092", Arrays.asList("kafka_sink"))
+    val kafkaConsumer = new SampleKafkaConsumer("info3:9093", Arrays.asList("PointsConsume"))
     while (true)
       kafkaConsumer.show(kafkaConsumer.consumer())
   }

@@ -3,11 +3,8 @@ package com.flink.demo.cases.case01
 import java.util.Properties
 
 import org.apache.flink.api.common.serialization.SimpleStringSchema
-import org.apache.flink.streaming.api.TimeCharacteristic
-import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment, _}
-import org.apache.flink.streaming.api.windowing.assigners.TumblingProcessingTimeWindows
-import org.apache.flink.streaming.api.windowing.time.Time
+import org.apache.flink.streaming.api.{CheckpointingMode, TimeCharacteristic}
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer010
 
 /**
@@ -24,16 +21,19 @@ import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer010
   */
 object FlinkKafka010Source {
 
-  val topic: String = "test"
+  val topic: String = "woven.streaming.log"
 
-  val bootstrap: String = "127.0.0.1:9092"
+  val bootstrap: String = "192.168.1.82:9092"
 
   def main(args: Array[String]): Unit = {
     val env: StreamExecutionEnvironment = StreamExecutionEnvironment.createLocalEnvironment()
+    env.enableCheckpointing(5000, CheckpointingMode.EXACTLY_ONCE)
 
     //kafka config
     val props = new Properties()
     props.setProperty("bootstrap.servers", bootstrap)
+    props.setProperty("group.id", "test62")
+    props.put("enable.auto.commit", "false")
 
     //create kafka source
     val kafkaSource = new FlinkKafkaConsumer010[String](topic, new SimpleStringSchema(), props)
@@ -42,22 +42,8 @@ object FlinkKafka010Source {
     env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)//设置
 
     val source: DataStream[String] = env.addSource(kafkaSource)
-    source.assignTimestampsAndWatermarks(new BoundedOutOfOrdernessTimestampExtractor[String](Time.seconds(5)) {
-      override def extractTimestamp(element: String): Long = element.split(" ")(0).toLong
-    })
 
-    val counts: DataStream[(String, Int)] = source
-      .filter(record => !record.isEmpty)
-      .map(record => {
-        val strs: Array[String] = record.split(" ")
-        println(strs.length + " -> " + strs.mkString(","))
-        Tuple2(strs(1), strs(2).toInt)
-      })
-      .keyBy(0)
-      .window(TumblingProcessingTimeWindows.of(Time.seconds(5)))
-      .sum(1)
-
-    counts.printToErr();
+    source.printToErr()
 
     env.execute("flink kafka source")
   }
