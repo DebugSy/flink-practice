@@ -15,6 +15,10 @@ import java.util.Map;
 
 /**
  * Created by P0007 on 2019/12/2.
+ *
+ * 比较 greedy的差别
+ * 1: 用在followedBy与next中间，无效果
+ * 2: 用在followedBy与followedBy中间有效
  */
 public class FlinkCEPGreedyTest {
 
@@ -22,9 +26,16 @@ public class FlinkCEPGreedyTest {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(1);
 
-        DataStream<Integer> input = env.fromElements(1, 1, 1, 1, 1, 0, 1, 1, 1, 0);
+        DataStream<Integer> input = env.fromElements(2, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0);
 
-        Pattern<Integer, ?> onesThenZero = Pattern.<Integer>begin("ones", AfterMatchSkipStrategy.skipPastLastEvent())
+        Pattern<Integer, ?> onesThenZero = Pattern.<Integer>begin("ones")
+                .where(new SimpleCondition<Integer>() {
+                    @Override
+                    public boolean filter(Integer value) throws Exception {
+                        return value == 2;
+                    }
+                })
+                .followedBy("middle")
                 .where(new SimpleCondition<Integer>() {
                     @Override
                     public boolean filter(Integer value) throws Exception {
@@ -34,7 +45,7 @@ public class FlinkCEPGreedyTest {
                 .oneOrMore()
                 .greedy()
 
-                .next("zero")
+                .followedByAny("zero")
                 .where(new SimpleCondition<Integer>() {
                     @Override
                     public boolean filter(Integer value) throws Exception {
@@ -44,8 +55,6 @@ public class FlinkCEPGreedyTest {
 
         PatternStream<Integer> pattern = CEP.pattern(input, onesThenZero);
 
-        // Expected: 5 3
-        // Actual: 5 4 3 2 1 3 2 1
         pattern.process(new PatternProcessFunction<Integer, Object>() {
             @Override
             public void processMatch(Map<String, List<Integer>> match, Context ctx, Collector<Object> out) throws Exception {
