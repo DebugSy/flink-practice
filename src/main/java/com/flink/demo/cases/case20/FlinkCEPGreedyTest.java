@@ -26,7 +26,7 @@ public class FlinkCEPGreedyTest {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(1);
 
-        DataStream<Integer> input = env.fromElements(2, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0);
+        DataStream<Integer> input = env.fromElements(2, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 3);
 
         Pattern<Integer, ?> onesThenZero = Pattern.<Integer>begin("ones")
                 .where(new SimpleCondition<Integer>() {
@@ -43,13 +43,21 @@ public class FlinkCEPGreedyTest {
                     }
                 })
                 .oneOrMore()
-                .greedy()
+//                .greedy()
 
                 .followedByAny("zero")
                 .where(new SimpleCondition<Integer>() {
                     @Override
                     public boolean filter(Integer value) throws Exception {
                         return value == 0;
+                    }
+                })
+
+                .next("end")
+                .where(new SimpleCondition<Integer>() {
+                    @Override
+                    public boolean filter(Integer value) throws Exception {
+                        return value == 3;
                     }
                 });
 
