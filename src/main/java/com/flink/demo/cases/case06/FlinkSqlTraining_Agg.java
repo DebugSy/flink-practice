@@ -34,7 +34,7 @@ public class FlinkSqlTraining_Agg {
 
     private static final Logger logger = LoggerFactory.getLogger(FlinkSqlTraining_Agg.class);
 
-    private static String fields = "username,url,clickTime,rowtime.rowtime";
+    private static String fields = "userId,username,url,clickTime.rowtime";
 
     private static String tumbleWindowSql = "select username, count(*) as cnt, " +
             "TUMBLE_START(rowtime, INTERVAL '10' SECOND) as window_start, " +
@@ -43,14 +43,13 @@ public class FlinkSqlTraining_Agg {
             "group by username, " +
             "TUMBLE(rowtime, INTERVAL '10' SECOND)";
 
-    private static String hopWindowSql = "select username, count(*) as cnt, " +
-            "HOP_ROWTIME(rowtime, INTERVAL '5' SECOND, INTERVAL '10' SECOND) as window_rowtime, " +
-            "HOP_START(rowtime, INTERVAL '5' SECOND, INTERVAL '10' SECOND) as window_start, " +
-            "HOP_END(rowtime, INTERVAL '5' SECOND, INTERVAL '10' SECOND) as window_end " +
+    private static String hopWindowSql = "select username, count(*) as cnt, avg(userId) as userId_avg," +
+            "HOP_ROWTIME(clickTime, INTERVAL '5' SECOND, INTERVAL '10' SECOND) as window_rowtime, " +
+            "HOP_START(clickTime, INTERVAL '5' SECOND, INTERVAL '10' SECOND) as window_start, " +
+            "HOP_END(clickTime, INTERVAL '5' SECOND, INTERVAL '10' SECOND) as window_end " +
             "from clicks " +
-            "where url like '%/api/H%'" +
             "group by username, " +
-            "HOP(rowtime, INTERVAL '5' SECOND, INTERVAL '10' SECOND)";
+            "HOP(clickTime, INTERVAL '5' SECOND, INTERVAL '10' SECOND)";
 
     private static String sessionWindowSql = "";
 
@@ -77,13 +76,8 @@ public class FlinkSqlTraining_Agg {
 //        Table sqlQuery = tableEnv.sqlQuery(tumbleWindowSql);
         Table sqlQuery = tableEnv.sqlQuery(hopWindowSql);
 
-        DataStream<Tuple2<Boolean, Row>> sinkStream = tableEnv.toRetractStream(sqlQuery, Row.class);
-        sinkStream.addSink(new SinkFunction<Tuple2<Boolean, Row>>() {
-            @Override
-            public void invoke(Tuple2<Boolean, Row> value, Context context) throws Exception {
-                logger.error("print retract:{} -> {}", value.f0, value.f1);
-            }
-        }).name("Print to Std.Error");
+        DataStream<Row> sinkStream = tableEnv.toAppendStream(sqlQuery, Row.class);
+        sinkStream.printToErr();
 
 
         env.execute("Flink SQL Training");
