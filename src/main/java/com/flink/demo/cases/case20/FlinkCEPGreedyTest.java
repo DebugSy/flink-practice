@@ -15,7 +15,7 @@ import java.util.Map;
 
 /**
  * Created by P0007 on 2019/12/2.
- *
+ * <p>
  * 比较 greedy的差别
  * 1: 用在followedBy与next中间，无效果
  * 2: 用在followedBy与followedBy中间有效
@@ -26,40 +26,43 @@ public class FlinkCEPGreedyTest {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(1);
 
-        DataStream<Integer> input = env.fromElements(2, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 3);
+        DataStream<Integer> input = env.fromElements(10, 21, 22, 23, 24, 11, 10, 11);
 
-        Pattern<Integer, ?> onesThenZero = Pattern.<Integer>begin("ones")
-                .where(new SimpleCondition<Integer>() {
-                    @Override
-                    public boolean filter(Integer value) throws Exception {
-                        return value == 2;
-                    }
-                })
-                .followedBy("middle")
-                .where(new SimpleCondition<Integer>() {
-                    @Override
-                    public boolean filter(Integer value) throws Exception {
-                        return value == 1;
-                    }
-                })
-                .oneOrMore()
-//                .greedy()
+        Pattern<Integer, ?> onesThenZero =
+                Pattern.<Integer>begin("ones", AfterMatchSkipStrategy.noSkip())
+                        .where(new SimpleCondition<Integer>() {
+                            @Override
+                            public boolean filter(Integer value) throws Exception {
+                                return value == 10;
+                            }
+                        })
 
-                .followedByAny("zero")
-                .where(new SimpleCondition<Integer>() {
-                    @Override
-                    public boolean filter(Integer value) throws Exception {
-                        return value == 0;
-                    }
-                })
+                        .followedBy("middle")
+                        .where(new SimpleCondition<Integer>() {
+                            @Override
+                            public boolean filter(Integer value) throws Exception {
+                                return value > 20;
+                            }
+                        })
+                        .times(2)
+//                        .consecutive()
+//                        .optional()
+//                        .greedy()
+//                        .until(wnew SimpleCondition<Integer>() {
+//                            @Override
+//                            public boolean filter(Integer value) throws Exception {
+//                                return value == 24;
+//                            }
+//                        })
 
-                .next("end")
-                .where(new SimpleCondition<Integer>() {
-                    @Override
-                    public boolean filter(Integer value) throws Exception {
-                        return value == 3;
-                    }
-                });
+                        .followedBy("end")
+                        .where(new SimpleCondition<Integer>() {
+                            @Override
+                            public boolean filter(Integer value) throws Exception {
+                                return value == 11;
+                            }
+                        })
+                ;
 
         PatternStream<Integer> pattern = CEP.pattern(input, onesThenZero);
 

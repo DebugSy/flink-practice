@@ -47,7 +47,7 @@ public class OutOfOrderRowDataSource extends RichSourceFunction<Row> {
         clicks.add(Arrays.asList("65", "用户A", "http://127.0.0.1/api/I", "2019-07-23 23:27:32.901"));
         clicks.add(Arrays.asList("66", "用户B", "http://127.0.0.1/api/H", "2019-07-23 23:27:36.908"));
         clicks.add(Arrays.asList("65", "用户A", "http://127.0.0.1/api/I", "2019-07-23 23:27:36.915"));
-        clicks.add(Arrays.asList("65", "用户A", "http://127.0.0.1/api/J", "2019-07-23 23:27:27.019"));//晚到数据
+        clicks.add(Arrays.asList("65", "用户A", "http://127.0.0.1/api/J", "2019-07-23 23:27:24.019"));//晚到数据
         clicks.add(Arrays.asList("69", "用户E", "http://127.0.0.1/api/J", "2019-07-23 23:27:38.916"));
         clicks.add(Arrays.asList("65", "用户A", "http://127.0.0.1/api/J", "2019-07-23 23:27:27.189"));//晚到数据
         clicks.add(Arrays.asList("66", "用户B", "http://127.0.0.1/api/J", "2019-07-23 23:27:48.950"));
