@@ -1,7 +1,9 @@
 package com.flink.demo.cases.common.datasource;
 
 import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
 import org.apache.flink.streaming.api.functions.source.RichSourceFunction;
+import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.flink.table.api.Types;
 import org.apache.flink.types.Row;
 import org.slf4j.Logger;
@@ -13,7 +15,7 @@ import java.util.Random;
 /**
  * Created by P0007 on 2019/9/3.
  */
-public class UrlClickRowDataSource extends RichSourceFunction<Row> {
+public class UrlClickRowDataSource extends RichParallelSourceFunction<Row> {
 
     private static final Logger logger = LoggerFactory.getLogger(UrlClickDataSource.class);
 
@@ -49,7 +51,8 @@ public class UrlClickRowDataSource extends RichSourceFunction<Row> {
             row.setField(2, url);
             row.setField(3, clickTime);
             logger.info("emit -> {}", row);
-            ctx.collect(row);
+            ctx.collectWithTimestamp(row, clickTime.getTime());
+            ctx.emitWatermark(new Watermark(clickTime.getTime()));
         }
     }
 
