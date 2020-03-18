@@ -6,11 +6,13 @@ import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor;
 import org.apache.flink.table.api.Types;
 import org.apache.flink.types.Row;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 
 import static com.flink.demo.cases.common.datasource.UrlClickRowDataSource.USER_CLICK_TYPEINFO;
@@ -42,8 +44,14 @@ public class FlinkStateTraining_Source_Cache {
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
         SingleOutputStreamOperator<Row> sourceStream = env.addSource(new UrlClickRowDataSource()).returns(USER_CLICK_TYPEINFO);
+        SingleOutputStreamOperator<Row> streamWithWatermark = sourceStream.assignTimestampsAndWatermarks(new AscendingTimestampExtractor<Row>() {
+            @Override
+            public long extractAscendingTimestamp(Row element) {
+                return Timestamp.valueOf(element.getField(3).toString()).getTime();
+            }
+        });
         CacheStreamFunction cacheStreamFunction = new CacheStreamFunction("userId", (RowTypeInfo) USER_CLICK_TYPEINFO);
-        SingleOutputStreamOperator<Row> cacheStream = sourceStream.keyBy(0).process(cacheStreamFunction);
+        SingleOutputStreamOperator<Row> cacheStream = streamWithWatermark.keyBy(0).process(cacheStreamFunction);
 
         cacheStream.printToErr();
 
