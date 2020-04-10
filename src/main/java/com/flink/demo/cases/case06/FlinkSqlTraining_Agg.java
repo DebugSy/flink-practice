@@ -5,10 +5,15 @@ import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.api.java.tuple.Tuple4;
+import org.apache.flink.configuration.Configuration;
+import org.apache.flink.contrib.streaming.state.RocksDBStateBackend;
+import org.apache.flink.runtime.state.StateBackend;
+import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.KeyedStream;
+import org.apache.flink.streaming.api.environment.CheckpointConfig;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor;
@@ -55,14 +60,26 @@ public class FlinkSqlTraining_Agg {
     private static String sessionWindowSql = "";
 
     public static void main(String[] args) throws Exception {
-        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        env.setParallelism(1);
+        Configuration configuration = new Configuration();
+        configuration.setString("state.checkpoints.num-retained", "10");
+        StreamExecutionEnvironment env = StreamExecutionEnvironment
+                .createLocalEnvironment(2, configuration);
+        env.setParallelism(3);
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
-        env.getConfig().setLatencyTrackingInterval(1000);
+        env.enableCheckpointing(5000);
+        CheckpointConfig checkpointConfig = env.getCheckpointConfig();
+        checkpointConfig.setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE);
+        checkpointConfig.setMinPauseBetweenCheckpoints(500);
+        checkpointConfig.setCheckpointTimeout(1000 * 60);
+        checkpointConfig.setMaxConcurrentCheckpoints(10);
+        checkpointConfig.enableExternalizedCheckpoints(
+                CheckpointConfig.ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION);
+        env.setStateBackend((StateBackend)new RocksDBStateBackend("file:///tmp/flink-checkpoints/"));
 
         StreamTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(env);
 
         DataStreamSource<Tuple4<Integer, String, String, Timestamp>> sourceStream = env.addSource(new UrlClickDataSource());
+
 
         KeyedStream<Tuple4<Integer, String, String, Timestamp>, Tuple> keyedStream = sourceStream.assignTimestampsAndWatermarks(
                 new AscendingTimestampExtractor<Tuple4<Integer, String, String, Timestamp>>() {
@@ -74,16 +91,10 @@ public class FlinkSqlTraining_Agg {
 
         tableEnv.registerDataStream("clicks", keyedStream, fields);
 
-//        Table sqlQuery = tableEnv.sqlQuery(tumbleWindowSql);
-        Table sqlQuery = tableEnv.sqlQuery(hopWindowSql);
+        Table sqlQuery = tableEnv.sqlQuery(tumbleWindowSql);
 
         DataStream<Tuple2<Boolean, Row>> sinkStream = tableEnv.toRetractStream(sqlQuery, Row.class);
-        sinkStream.addSink(new SinkFunction<Tuple2<Boolean, Row>>() {
-            @Override
-            public void invoke(Tuple2<Boolean, Row> value, Context context) throws Exception {
-                logger.error("print retract:{} -> {}", value.f0, value.f1);
-            }
-        }).name("Print to Std.Error");
+        sinkStream.printToErr();
 
 
         env.execute("Flink SQL Training");
