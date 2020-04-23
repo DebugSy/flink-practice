@@ -1,5 +1,6 @@
 package com.flink.demo.cases.case26;
 
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
@@ -19,34 +20,40 @@ import java.util.List;
  * 最终状态触发窗口计算
  */
 @Slf4j
+@AllArgsConstructor
 public class FinalStateTriggerWindow {
 
     private DataStream<Row> inputStream;
 
     private RowTypeInfo rowTypeInfo;
 
-    public FinalStateTriggerWindow(DataStream<Row> inputStream, RowTypeInfo rowTypeInfo) {
-        this.inputStream = inputStream;
-        this.rowTypeInfo = rowTypeInfo;
-    }
+    private String keyCol;
 
-    public DataStream<Row> process(int keyColIndex,
-                                   int finalStateColumnIndex,
+    public DataStream<Row> process(String finalStateColumn,
                                    List<String> finalStateValues,
                                    long waitTime,
                                    long lateness) {
+
+        int keyColIndex = checkAndGetKeyColIndex(keyCol);
+        int finalStateColumnIndex = checkAndGetKeyColIndex(finalStateColumn);
         KeyedStream<Row, Tuple> keyedStream = inputStream.keyBy(keyColIndex);
         SingleOutputStreamOperator<Row> finalStateResult = keyedStream.timeWindow(Time.seconds(waitTime))
-                .allowedLateness(Time.seconds(lateness))
                 .trigger(new FinalStateTrigger(finalStateColumnIndex, finalStateValues))
-                .process(new FinalStateAggregate(rowTypeInfo))
+                .allowedLateness(Time.seconds(lateness))
+                .process(new FinalStateAggregate(rowTypeInfo, finalStateColumnIndex, finalStateValues))
+                .returns(rowTypeInfo)
                 .name("FinalStateTriggerWindow")
                 .uid("FinalStateTriggerWindow");
         return finalStateResult;
     }
 
-
-
+    private int checkAndGetKeyColIndex(String keyCol) {
+        int keyColIndex = rowTypeInfo.getFieldIndex(keyCol);
+        if (keyColIndex == -1) {
+            throw new RuntimeException(keyCol + " not exist in " + rowTypeInfo);
+        }
+        return keyColIndex;
+    }
 
 
 }

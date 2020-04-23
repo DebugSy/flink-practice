@@ -27,15 +27,17 @@ public class FinalStateTrigger extends Trigger<Row, TimeWindow> {
 
     @Override
     public TriggerResult onElement(Row element, long timestamp, TimeWindow window, TriggerContext ctx) throws Exception {
-        TriggerResult triggerResult = TriggerResult.CONTINUE;
-        if (ctx.getCurrentWatermark() <= window.maxTimestamp()) {
+        TriggerResult triggerResult;
+        if (window.maxTimestamp() <= ctx.getCurrentWatermark()) {
+            triggerResult = TriggerResult.FIRE;
+        } else {
             Object finalStateColValue = element.getField(finalStateColumnIndex);
             if (finalStateColValue != null && finalStateValues.contains(finalStateColValue)) {
                 triggerResult = TriggerResult.FIRE;
+            } else {
+                ctx.registerEventTimeTimer(window.maxTimestamp());
+                triggerResult = TriggerResult.CONTINUE;
             }
-        } else {
-            ctx.registerEventTimeTimer(window.maxTimestamp());
-            triggerResult = TriggerResult.FIRE;
         }
         log.debug("OnElement Event, element is {}, timestamp is {}, watermark is {}, window is {}, trigger result is {}",
                 element, timestamp, ctx.getCurrentWatermark(), window, triggerResult);
