@@ -23,7 +23,7 @@ public class UserRowDataSource extends RichSourceFunction<Row> {
 
     public static String USER_FIELDS = "userId,username,address,activityTime";
 
-    public static String USER_FIELDS_WITH_ROWTIME = "userId,username,address,activityTime";
+    public static String USER_FIELDS_WITH_ROWTIME = "userId,username,address,activityTime.rowtime";
 
     public static TypeInformation USER_TYPEINFO = Types.ROW(
             new String[]{"userId", "username", "address", "activityTime"},

@@ -79,7 +79,7 @@ public class UrlClickRowDataSource extends RichParallelSourceFunction<Row> {
             counter.inc();
             ctx.collect(row);
             i++;
-            Thread.sleep(1000 * 1);
+            Thread.sleep(1000 * 5);
         }
     }
 
@@ -90,7 +90,7 @@ public class UrlClickRowDataSource extends RichParallelSourceFunction<Row> {
         Integer userId = 65 + nextInt;
         String username = "user" + (char) ('A' + nextInt) + "_" + UUID.randomUUID().toString().substring(0, 4);
         String url = "http://www.inforefiner.com/api/" + (char) ('H' + random.nextInt(4));
-        Timestamp clickTime = new Timestamp(System.currentTimeMillis() - 7171000);//往前倒2小时
+        Timestamp clickTime = new Timestamp(System.currentTimeMillis() - 7200000);//往前倒2小时
         Integer rank = random.nextInt(100);
         String uuid = UUID.randomUUID().toString();
         Date date = new Date(clickTime.getTime());
