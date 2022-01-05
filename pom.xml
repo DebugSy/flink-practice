@@ -9,7 +9,7 @@
     <artifactId>flink-demo</artifactId>
 
     <properties>
-        <flink.version>1.8.1</flink.version>
+        <flink.version>1.9.2</flink.version>
         <scala.version>2.11</scala.version>
         <json-flattener.version>0.8.1</json-flattener.version>
     </properties>
