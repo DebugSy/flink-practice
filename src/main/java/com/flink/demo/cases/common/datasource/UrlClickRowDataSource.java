@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Random;
 import java.util.UUID;
 
@@ -26,7 +27,7 @@ public class UrlClickRowDataSource extends RichParallelSourceFunction<Row> {
 
     public static String CLICK_FIELDS = "userId,username,url,clickTime,rank_col,uuid_col,data_col,time_col";
 
-    public static String CLICK_FIELDS_WITH_ROWTIME = "userId,username,url,clickTime.rowtime,data_col,time_col";
+    public static String CLICK_FIELDS_WITH_ROWTIME = "userId,username,url,clickTime,data_col,time_col,rowtime.proctime";
 
     public static TypeInformation USER_CLICK_TYPEINFO = Types.ROW_NAMED(
             new String[]{"userId", "username", "url", "clickTime", "rank_col", "uuid_col", "data_col", "time_col"},
@@ -73,7 +74,7 @@ public class UrlClickRowDataSource extends RichParallelSourceFunction<Row> {
             i++;
 
             intCounter.add(1);
-            Thread.sleep(1000 * 10);
+            Thread.sleep(1000 * 1);
         }
     }
 
@@ -124,6 +125,39 @@ public class UrlClickRowDataSource extends RichParallelSourceFunction<Row> {
         row.setField(5, uuid);
         row.setField(6, null);
         row.setField(7, timeStr);
+        return row;
+    }
+
+    private Row genarateRow3(Random random) throws InterruptedException {
+        int indexOfThisSubtask = getRuntimeContext().getIndexOfThisSubtask();
+        Thread.sleep((indexOfThisSubtask + 1) * 10);
+        int nextInt = random.nextInt(5);
+        Integer userId = 65 + nextInt;
+        String username = "userA=valueA";
+        String url = "http://www.inforefiner.com/api/" + (char) ('H' + random.nextInt(4));
+        Timestamp clickTime = new Timestamp(System.currentTimeMillis() - 7171000);//往前倒2小时
+        Integer rank = random.nextInt(100);
+        String uuid = UUID.randomUUID().toString();
+        Date date = new Date(clickTime.getTime());
+        String dateStr = dateFormat.format(date);
+        String timeStr = timeFormat.format(date);
+        Row row = new Row(10);
+        HashMap<String, String> map = new HashMap<>();
+        map.put("name", "name_A");
+        map.put("address", "address_A");
+        Content[] contents = new Content[2];
+        contents[0] = new Content("k1", "v1");
+        contents[1] = new Content("k2", "v2");
+        row.setField(0, userId);
+        row.setField(1, username);
+        row.setField(2, url);
+        row.setField(3, clickTime);
+        row.setField(4, rank);
+        row.setField(5, uuid);
+        row.setField(6, null);
+        row.setField(7, timeStr);
+        row.setField(8, map);
+        row.setField(9, contents);
         return row;
     }
 

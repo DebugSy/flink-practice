@@ -6,6 +6,7 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor;
+import org.apache.flink.table.api.EnvironmentSettings;
 import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.apache.flink.types.Row;
@@ -16,13 +17,17 @@ public class SQLBuiltInFunctionTraining {
 
 
     private static String sql =
-            "SELECT username,T.p FROM clicks, LATERAL TABLE(EXPLODE(username, '')) as T(p)";
+            "SELECT TUMBLE_START(rowtime, INTERVAL '5' SECOND) as window_start," +
+                    "TUMBLE_END(rowtime, INTERVAL '5' SECOND) as window_end," +
+                    "userId,count(username) as cnt from clicks group by userId,tumble(rowtime, INTERVAL '5' SECOND)";
+
+    private static String sql2 = "SELECT userId,username,SPLIT_INDEX(username, '=' , 0) as c1,SPLIT_INDEX(username, '=' , 1) as c2  from clicks";
 
     public static void main(String[] args) throws Exception {
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(1);
-        env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
+        env.setStreamTimeCharacteristic(TimeCharacteristic.ProcessingTime);
 
         SingleOutputStreamOperator<Row> clickStream = env.addSource(new UrlClickRowDataSource())
                 .returns(UrlClickRowDataSource.USER_CLICK_TYPEINFO);
@@ -33,13 +38,14 @@ public class SQLBuiltInFunctionTraining {
                         return Timestamp.valueOf(element.getField(3).toString()).getTime();
                     }
                 });
-        StreamTableEnvironment tableEnv = StreamTableEnvironment.create(env);
+        EnvironmentSettings settings = EnvironmentSettings.newInstance()
+                .useBlinkPlanner()
+                .inStreamingMode()
+                .build();
+        StreamTableEnvironment tableEnv = StreamTableEnvironment.create(env, settings);
         tableEnv.createTemporaryView("clicks", clickStreamAndWatermarks, UrlClickRowDataSource.CLICK_FIELDS_WITH_ROWTIME);
 
-        //udf
-        tableEnv.registerFunction("EXPLODE", new ExplodeUDTF());
-
-        Table table = tableEnv.sqlQuery(sql);
+        Table table = tableEnv.sqlQuery(sql2);
         DataStream<Row> rowDataStream = tableEnv.toAppendStream(table, Row.class);
         rowDataStream.printToErr();
 
