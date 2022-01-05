@@ -104,7 +104,7 @@ parallelism.default: 1
 # Supported backends are 'jobmanager', 'filesystem', 'rocksdb', or the
 # <class-name-of-factory>.
 #
-# state.backend: filesystem
+state.backend: filesystem
 
 # Directory for checkpoints filesystem, when using any of the default bundled
 # state backends.
@@ -120,6 +120,8 @@ parallelism.default: 1
 #
 # state.backend.incremental: false
 
+state.checkpoints.num-retained: 10
+
 #==============================================================================
 # Web Frontend
 #==============================================================================
@@ -131,7 +133,7 @@ parallelism.default: 1
 # The port under which the web-based runtime monitor listens.
 # A value of -1 deactivates the web server.
 
-rest.port: 8081
+rest.port: 8082
 
 # Flag to specify whether job submission is enabled from the web-based
 # runtime monitor. Uncomment to disable.

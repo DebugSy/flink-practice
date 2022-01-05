@@ -28,7 +28,7 @@ public class FlinkStateQueryClient {
 
         CompletableFuture<ValueState<Tuple2<Long, Long>>> resultFuture =
                 client.getKvState(
-                        JobID.fromHexString("ed6bc6a037aabb9b1c27412ca68c7ca0"),
+                        JobID.fromHexString("c4d2fcef40d1fe5298c8889b81840ee5"),
                         "query-name",
                         1L,
                         BasicTypeInfo.LONG_TYPE_INFO,
@@ -38,7 +38,7 @@ public class FlinkStateQueryClient {
         ValueState<Tuple2<Long, Long>> valueState = resultFuture.join();
         System.err.println(valueState.value());
 
-        client.shutdownAndWait();
+        CompletableFuture<?> completableFuture = client.shutdownAndHandle();
 
 
     }

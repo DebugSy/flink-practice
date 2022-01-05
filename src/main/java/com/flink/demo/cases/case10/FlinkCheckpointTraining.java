@@ -1,5 +1,6 @@
 package com.flink.demo.cases.case10;
 
+import com.flink.demo.cases.common.datasource.OutOfOrderRowDataSource;
 import com.flink.demo.cases.common.datasource.UrlClickRowDataSource;
 import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
@@ -25,10 +26,11 @@ import java.sql.Timestamp;
 public class FlinkCheckpointTraining {
 
     public static void main(String[] args) throws Exception {
-//        Configuration configuration = new Configuration();
-//        configuration.setString("state.savepoints.dir", "file:///tmp/flink/savepoint-dir");
+        Configuration configuration = new Configuration();
+        configuration.setString("state.savepoints.dir", "file:///tmp/flink/savepoint-dir");
+        configuration.setString("state.checkpoints.num-retained", "10");
 
-        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(configuration);
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
         env.setParallelism(1);
 
@@ -39,7 +41,7 @@ public class FlinkCheckpointTraining {
         env.getCheckpointConfig().setCheckpointTimeout(1000 * 10);
         env.getCheckpointConfig().setMaxConcurrentCheckpoints(10);
         env.getCheckpointConfig().enableExternalizedCheckpoints(CheckpointConfig.ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION);
-        env.setStateBackend((StateBackend)new FsStateBackend("file:///tmp/flink/checkpint-dir"));
+        env.setStateBackend((StateBackend)new FsStateBackend("file:///tmp/flink/checkpints"));
 
         //restart strategy
         env.setRestartStrategy(RestartStrategies.fixedDelayRestart(3, org.apache.flink.api.common.time.Time.seconds(10)));
@@ -47,8 +49,8 @@ public class FlinkCheckpointTraining {
         //latency
         env.getConfig().setLatencyTrackingInterval(1000 * 5);
 
-        SingleOutputStreamOperator<Row> urlclickSource = env.addSource(new UrlClickRowDataSource())
-                .returns(UrlClickRowDataSource.USER_CLICK_TYPEINFO)
+        SingleOutputStreamOperator<Row> urlclickSource = env.addSource(new OutOfOrderRowDataSource())
+                .returns(OutOfOrderRowDataSource.CLICK_TYPEINFO)
                 .setParallelism(1)
                 .name("Url Click Source");
 
@@ -93,10 +95,6 @@ public class FlinkCheckpointTraining {
                 .name("Aggregate");
 
         aggregate.printToErr();
-
-
-        SavepointRestoreSettings savepointRestoreSettings = SavepointRestoreSettings.forPath("file:///tmp/flink/savepoint-dir/savepoint-941a5d-f75f788850bf", true);
-        env.getStreamGraph().getJobGraph().setSavepointRestoreSettings(savepointRestoreSettings);
 
         env.execute("Flink Checkpoint Training");
 

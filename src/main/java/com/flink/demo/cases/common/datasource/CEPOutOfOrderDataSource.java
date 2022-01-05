@@ -79,7 +79,7 @@ public class CEPOutOfOrderDataSource extends RichSourceFunction<Row> {
             logger.info("emit {} -> {}", Timestamp.valueOf(record.get(3)).getTime(), row);
             sourceContext.collect(row);
 
-            Thread.sleep(1000 * 1);
+            Thread.sleep(300 * 1);
         }
     }
 

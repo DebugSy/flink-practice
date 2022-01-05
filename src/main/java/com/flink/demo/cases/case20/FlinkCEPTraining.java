@@ -12,6 +12,7 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor;
+import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.types.Row;
 import org.apache.flink.util.Collector;
 
@@ -41,36 +42,20 @@ public class FlinkCEPTraining {
         });
 
         //build
-        Pattern<Row, Row> pattern = Pattern.<Row>begin("start", AfterMatchSkipStrategy.skipToLast("start"))
+        Pattern<Row, Row> pattern = Pattern.<Row>begin("start", AfterMatchSkipStrategy.noSkip())
                 .where(new SimpleCondition<Row>() {
                     @Override
                     public boolean filter(Row value) throws Exception {
                         return Integer.parseInt(value.getField(0).toString()) == 68;
                     }
                 })
-                .followedBy("middle")
-                .where(new SimpleCondition<Row>() {
-                    @Override
-                    public boolean filter(Row value) throws Exception {
-                        return Integer.parseInt(value.getField(0).toString()) > 68;
-                    }
-                })
-                .followedBy("end")
-                .where(new SimpleCondition<Row>() {
-                    @Override
-                    public boolean filter(Row value) throws Exception {
-                        return Integer.parseInt(value.getField(0).toString()) < 68;
-                    }
-                });
+                .times(3)
+                .consecutive()
+                .within(Time.seconds(60));
 
         PatternStream<Row> patternStream = CEP.pattern(watermarks, pattern);
 
-        patternStream.process(new PatternProcessFunction<Row, Row>() {
-            @Override
-            public void processMatch(Map<String, List<Row>> match, Context ctx, Collector<Row> out) throws Exception {
-                System.err.println(match);
-            }
-        });
+        patternStream.process(new MyPatternProcessFunction());
 
 
         env.execute("FLink CEP Training");

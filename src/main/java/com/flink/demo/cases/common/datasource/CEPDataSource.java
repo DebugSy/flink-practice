@@ -32,7 +32,9 @@ public class CEPDataSource extends RichSourceFunction<Row> {
 
     private static final Logger logger = LoggerFactory.getLogger(CEPDataSource.class);
 
-    public static String CLICK_FIELDS = "CDR_ID,USR_ID,USER_BRAND,ORD_STS,RCV_AMT,OFF_FLAG,POST_TM,procTime.procTime";
+    public static String CLICK_FIELDS = "CDR_ID,USR_ID,USER_BRAND,ORD_STS,RCV_AMT,OFF_FLAG,POST_TM";
+
+    public static String CLICK_FIELDS_PROCTIME = "CDR_ID,USR_ID,USER_BRAND,ORD_STS,RCV_AMT,OFF_FLAG,POST_TM.rowtime";
 
     public static String CLICK_FIELDS_truncatedTime = "CDR_ID,USR_ID,USER_BRAND,ORD_STS,RCV_AMT,OFF_FLAG,POST_TM,truncatedTime,procTime.procTime";
 

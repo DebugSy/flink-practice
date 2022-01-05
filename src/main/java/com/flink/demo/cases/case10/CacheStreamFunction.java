@@ -104,7 +104,7 @@ public class CacheStreamFunction extends KeyedProcessFunction<Tuple, Row, Row> {
         List<Row> rows = mapState.get(eventTime);
         rows = rows == null ? new ArrayList<>() : rows;
         rows.add(newRow);
-        long registerTime = eventTime + 1000 * 3; //3s后触发
+        long registerTime = eventTime + 1000 * 60; //60s后触发
         keyMapState.put(keyFieldValue, registerTime);
         mapState.put(registerTime, rows);
         log.info("Register timer with {}, key is {}", registerTime, keyFieldValue);
@@ -119,13 +119,28 @@ public class CacheStreamFunction extends KeyedProcessFunction<Tuple, Row, Row> {
         TimerService timerService = ctx.timerService();
         List<Row> rows = mapState.get(timestamp);
         Iterator<Row> iterator = rows.iterator();
+
+        Iterable<Object> keyMapKeys = keyMapState.keys();
+        Iterator<Object> keyMapKeyIter = keyMapKeys.iterator();
+        while (keyMapKeyIter.hasNext()) {
+            Object obj = keyMapKeyIter.next();
+            log.info("obj is {}", obj);
+        }
+
         while (iterator.hasNext()) {
             Row row = iterator.next();
+            log.info("emit row {}", row);
             out.collect(row); // collect row
             Object keyField = row.getField(keyColumnIndex);
             keyMapState.remove(keyField);
         }
+        Iterable<Long> keys = mapState.keys();
+        Iterator<Long> keyIter = keys.iterator();
+        while (keyIter.hasNext()) {
+            System.out.println("key - " + keyIter.next());
+        }
         mapState.remove(timestamp);
+
         timerService.deleteEventTimeTimer(timestamp);
     }
 }

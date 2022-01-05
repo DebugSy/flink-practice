@@ -25,10 +25,10 @@ public class UrlClickFinalStateRowDataSource extends RichParallelSourceFunction<
     public static TypeInformation USER_CLICK_TYPEINFO = Types.ROW(
             new String[]{"userId", "username", "url", "clickTime", "random", "uuid", "data_col", "time_col", "final_state"},
             new TypeInformation[]{
-                    Types.INT(),
                     Types.STRING(),
                     Types.STRING(),
-                    Types.SQL_TIMESTAMP(),
+                    Types.STRING(),
+                    Types.STRING(),
                     Types.STRING(),
                     Types.STRING(),
                     Types.STRING(),

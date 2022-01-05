@@ -50,6 +50,10 @@ public class RedisLookup extends TableFunction<Row> {
     public void eval(String key) {
         String rediesKey = Util.rediesKey(additionalKey, key);
         Map<String, String> value = redisCommandsContainer.hgetAll(rediesKey);
+        logger.info("Lookup key {}, value {}", key, value);
+        if (value.isEmpty()) {
+            return;
+        }
         String[] fieldNames = rowTypeInfo.getFieldNames();
         Row row = new Row(fieldNames.length);
         row.setField(0, TypeInfoUtil.cast(key, rowTypeInfo.getTypeAt(0)));//这里还需要将类型转换

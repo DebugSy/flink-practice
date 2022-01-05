@@ -1,5 +1,7 @@
 package com.flink.demo.cases.case02;
 
+import com.flink.demo.cases.common.datasource.OutOfOrderDataSource;
+import com.flink.demo.cases.common.datasource.OutOfOrderRowDataSource;
 import com.flink.demo.cases.common.datasource.UrlClickRowDataSource;
 import com.flink.demo.cases.common.datasource.UserRowDataSource;
 import org.apache.flink.api.common.functions.CoGroupFunction;
@@ -33,8 +35,8 @@ public class FlinkStreamTraining_coGroup {
         env.setParallelism(1);
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
-        SingleOutputStreamOperator<Row> clickStream = env.addSource(new UrlClickRowDataSource())
-                .returns(UrlClickRowDataSource.USER_CLICK_TYPEINFO);
+        SingleOutputStreamOperator<Row> clickStream = env.addSource(new OutOfOrderRowDataSource())
+                .returns(OutOfOrderRowDataSource.CLICK_TYPEINFO);
         SingleOutputStreamOperator<Row> clickStreamAndWatermarks = clickStream.assignTimestampsAndWatermarks(new AscendingTimestampExtractor<Row>() {
             @Override
             public long extractAscendingTimestamp(Row element) {
@@ -42,8 +44,8 @@ public class FlinkStreamTraining_coGroup {
             }
         });
 
-        SingleOutputStreamOperator<Row> userStream = env.addSource(new UserRowDataSource())
-                .returns(UserRowDataSource.USER_TYPEINFO);
+        SingleOutputStreamOperator<Row> userStream = env.addSource(new OutOfOrderRowDataSource())
+                .returns(OutOfOrderRowDataSource.CLICK_TYPEINFO);
         SingleOutputStreamOperator<Row> userStreamAndWatermarks = userStream.assignTimestampsAndWatermarks(new AscendingTimestampExtractor<Row>() {
             @Override
             public long extractAscendingTimestamp(Row element) {
@@ -69,6 +71,7 @@ public class FlinkStreamTraining_coGroup {
                     }
                 })
                 .window(TumblingEventTimeWindows.of(Time.seconds(5)))
+                .allowedLateness(Time.seconds(100))
                 .apply(new CoGroupFunction<Row, Row, Row>() {
                     @Override
                     public void coGroup(Iterable<Row> first, Iterable<Row> second, Collector<Row> out) throws Exception {

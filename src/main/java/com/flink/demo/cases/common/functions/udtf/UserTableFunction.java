@@ -40,11 +40,7 @@ public class UserTableFunction extends TableFunction<Row> {
     }
 
     public void eval(String username) {
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        logger.info("lookup key {}", username);
         if (users.containsKey(username)) {
             Row row = users.get(username);
             logger.info("get row {} with key {}", row, username);

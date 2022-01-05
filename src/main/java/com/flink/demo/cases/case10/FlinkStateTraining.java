@@ -49,7 +49,7 @@ public class FlinkStateTraining {
         env.getCheckpointConfig().setCheckpointTimeout(1000 * 60);
         env.getCheckpointConfig().setMaxConcurrentCheckpoints(10);
         env.getCheckpointConfig().enableExternalizedCheckpoints(CheckpointConfig.ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION);
-        env.setStateBackend((StateBackend)new RocksDBStateBackend("file:///tmp/flink-checkpoints/"));
+//        env.setStateBackend((StateBackend)new RocksDBStateBackend("file:///tmp/flink-checkpoints/"));
 
         env.setRestartStrategy(RestartStrategies.fixedDelayRestart(3, Time.seconds(10)));
 

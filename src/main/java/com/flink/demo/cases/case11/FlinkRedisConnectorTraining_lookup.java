@@ -41,25 +41,30 @@ public class FlinkRedisConnectorTraining_lookup {
     private static final Logger logger = LoggerFactory.getLogger(FlinkRedisConnectorTraining_lookup.class);
 
     private static TypeInformation userClickTypeInfo = Types.ROW(
-            new String[]{"userId", "username", "url", "clickTime"},
+            new String[]{"userId", "username", "url", "clickTime", "data_col", "time_col"},
             new TypeInformation[]{
-                    Types.INT(),
                     Types.STRING(),
                     Types.STRING(),
-                    Types.SQL_TIMESTAMP()
+                    Types.STRING(),
+                    Types.SQL_TIMESTAMP(),
+                    Types.STRING(),
+                    Types.STRING(),
             });
 
     private static TypeInformation lookupTypeInfo = Types.ROW(
-            new String[]{"username", "cnt"},
+            new String[]{"sId", "sName", "sex", "age", "class"},
             new TypeInformation[]{
                     Types.STRING(),
-                    Types.LONG()
+                    Types.STRING(),
+                    Types.STRING(),
+                    Types.INT(),
+                    Types.STRING()
             });
 
     /**
      * 流连接侧表，类似lookup
      */
-    private static String innerJoinSql = "select userId,username,url,clickTime,cnt from clicks, LATERAL TABLE(users(username)) as T(name,cnt)";
+    private static String innerJoinSql = "select userId,username,url,clickTime,sId,sName,sex,age,class from clicks, LATERAL TABLE(users(userId)) as T(sId,sName,sex,age,class)";
 
     public static void main(String[] args) throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
@@ -72,8 +77,8 @@ public class FlinkRedisConnectorTraining_lookup {
 
         tableEnv.registerDataStream("clicks", streamSource, CLICK_FIELDS);
 
-        FlinkJedisPoolConfig conf = new FlinkJedisPoolConfig.Builder().setHost("192.168.1.83").setPort(6378).build();
-        RedisLookup redisLookup = new RedisLookup(conf, (RowTypeInfo) lookupTypeInfo, "flink-redis-sink");
+        FlinkJedisPoolConfig conf = new FlinkJedisPoolConfig.Builder().setHost("192.168.2.136").setPort(7000).build();
+        RedisLookup redisLookup = new RedisLookup(conf, (RowTypeInfo) lookupTypeInfo, "redis-sink");
         tableEnv.registerFunction("users", redisLookup);
 
         Table sqlQuery = tableEnv.sqlQuery(innerJoinSql);

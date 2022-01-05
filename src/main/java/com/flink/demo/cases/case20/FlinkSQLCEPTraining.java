@@ -58,11 +58,11 @@ public class FlinkSQLCEPTraining {
                 .assignTimestampsAndWatermarks(new AscendingTimestampExtractor<Row>() {
                     @Override
                     public long extractAscendingTimestamp(Row element) {
-                        return Timestamp.valueOf(element.getField(6).toString()).getTime();
+                        return Long.valueOf(element.getField(6).toString());
                     }
                 }).keyBy(0);
 
-        tableEnv.registerDataStream("cep_source", keyedClickStream, CEPDataSource.CLICK_FIELDS);
+        tableEnv.registerDataStream("cep_source", keyedClickStream, CEPDataSource.CLICK_FIELDS_PROCTIME);
 
         Table sqlQuery = tableEnv.sqlQuery(CEP_SQL);
 

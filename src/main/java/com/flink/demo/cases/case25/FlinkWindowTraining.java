@@ -31,9 +31,16 @@ public class FlinkWindowTraining {
                 .returns(UrlClickRowDataSource.USER_CLICK_TYPEINFO)
                 .name("url click stream source");
 
-        KeyedStream<Row, Tuple> keyedStream = urlClickSource.keyBy(1);
+        SingleOutputStreamOperator<Row> streamOperator = urlClickSource.assignTimestampsAndWatermarks(new AscendingTimestampExtractor<Row>() {
+            @Override
+            public long extractAscendingTimestamp(Row element) {
+                return Timestamp.valueOf(element.getField(3).toString()).getTime();
+            }
+        });
 
-        SingleOutputStreamOperator<Row> aggregate = keyedStream.timeWindow(Time.seconds(5))
+        KeyedStream<Row, Tuple> keyedStream = streamOperator.keyBy(1);
+
+        SingleOutputStreamOperator<Row> aggregate = keyedStream.timeWindow(Time.seconds(600))
                 .trigger(new Trigger<Row, TimeWindow>() {
                     @Override
                     public TriggerResult onElement(Row element, long timestamp, TimeWindow window, TriggerContext ctx) throws Exception {

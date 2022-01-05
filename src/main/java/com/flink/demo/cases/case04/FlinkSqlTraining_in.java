@@ -51,21 +51,12 @@ public class FlinkSqlTraining_in {
 
         StreamTableEnvironment tEnv = StreamTableEnvironment.create(env);
         tEnv.registerDataStream("users1", keyedStream1, userFields);
-        tEnv.registerDataStream("users2", keyedStream1, userFields);
-        tEnv.registerFunction("my_agg", new MyUDAF());
 
-        Table table = tEnv.sqlQuery("SELECT username,my_agg(u1.address) as address FROM users1 u1  \n" +
-                "group by TUMBLE(u1.activityTime, INTERVAL '5' SECOND),u1.username \n");
-
-//        tEnv.registerTable("addresses", table);
-//        tEnv.registerFunction("addrs", new AddressUDTF());
-//
-//        Table table1 = tEnv.sqlQuery("select * from users1 u1, LATERAL TABLE(addrs(u1.username)) as t2(address)\n" +
-//                "where POSITION(u1.address in t2.address) = 0 \n");
+        Table table = tEnv.sqlQuery("select * from users1 where userId > 99999");
 
         //不加时间窗口需要支持retract
-        DataStream<Tuple2<Boolean, Row>> retractSinkStream = tEnv.toRetractStream(table, Row.class);
-        retractSinkStream.printToErr();
+        DataStream<Row> sinkStream = tEnv.toAppendStream(table, Row.class);
+        sinkStream.printToErr();
 
         env.execute("Flink sql training in");
     }

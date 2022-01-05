@@ -21,7 +21,7 @@ import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer010
   */
 object FlinkKafka010Source {
 
-  val topic: String = "woven.streaming.log"
+  val topic: String = "flink_1217"
 
   val bootstrap: String = "192.168.1.82:9092"
 
@@ -32,7 +32,7 @@ object FlinkKafka010Source {
     //kafka config
     val props = new Properties()
     props.setProperty("bootstrap.servers", bootstrap)
-    props.setProperty("group.id", "test62")
+    props.setProperty("group.id", "shiy_test_source")
     props.put("enable.auto.commit", "false")
 
     //create kafka source
@@ -41,7 +41,7 @@ object FlinkKafka010Source {
 
     env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)//设置
 
-    val source: DataStream[String] = env.addSource(kafkaSource)
+    val source: DataStream[String] = env.addSource(kafkaSource).setParallelism(1)
 
     source.printToErr()
 

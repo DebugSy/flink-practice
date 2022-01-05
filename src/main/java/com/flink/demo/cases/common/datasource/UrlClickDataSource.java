@@ -33,11 +33,17 @@ public class UrlClickDataSource extends RichParallelSourceFunction<Tuple4<Intege
         while (running) {
             int indexOfThisSubtask = getRuntimeContext().getIndexOfThisSubtask();
 //            logger.info("The index of the parallel subtask is {}", indexOfThisSubtask);
-            Thread.sleep((indexOfThisSubtask + 1) * 1000);
+//            Thread.sleep((indexOfThisSubtask + 1) * 1000);
+            if (count != 0 && count % 10 == 0) {
+                logger.info("Sleep 10s");
+                Thread.sleep(1000 * 10);
+            } else {
+                Thread.sleep((indexOfThisSubtask + 1) * 1000);
+            }
             int nextInt = random.nextInt(10);
-            Integer userId = 65 + nextInt;
-            String username = "用户" + (char) ('A' + nextInt);
-            Timestamp clickTime = new Timestamp(System.currentTimeMillis());
+            Integer userId = 65;
+            String username = "用户A";
+            Timestamp clickTime = new Timestamp(System.currentTimeMillis() - 7200000);
             String url = "http://127.0.0.1/api/" + (char) ('H' + random.nextInt(4));
             Tuple4<Integer, String, String, Timestamp> tuple4 = new Tuple4<>(userId, username, url, clickTime);
             count++;

@@ -3,8 +3,13 @@ package com.flink.demo.cases.case10;
 import com.flink.demo.cases.common.datasource.UrlClickRowDataSource;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
+import org.apache.flink.configuration.Configuration;
+import org.apache.flink.runtime.state.StateBackend;
+import org.apache.flink.runtime.state.filesystem.FsStateBackend;
+import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
+import org.apache.flink.streaming.api.environment.CheckpointConfig;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor;
 import org.apache.flink.table.api.Types;
@@ -29,29 +34,49 @@ public class FlinkStateTraining_Source_Cache {
     private static final Logger logger = LoggerFactory.getLogger(FlinkStateTraining_Source_Cache.class);
 
     private static String tumbleWindowSql = "select username, count(*) as cnt, " +
-            "TUMBLE_START(watermark_col, INTERVAL '10' SECOND) as window_start, " +
-            "TUMBLE_END(watermark_col, INTERVAL '10' SECOND) as window_end, " +
-            "SUBSTRING(TIMESTAMP_TO_STRING(TUMBLE_START(watermark_col, INTERVAL '10' SECOND)), 1, 14) AS PATH_DIR " +
+            "TUMBLE_START(watermark_col, INTERVAL '60' SECOND) as window_start, " +
+            "TUMBLE_END(watermark_col, INTERVAL '60' SECOND) as window_end, " +
+            "SUBSTRING(TIMESTAMP_TO_STRING(TUMBLE_START(watermark_col, INTERVAL '60' SECOND)), 1, 14) AS PATH_DIR " +
             "from new_clicks " +
             "group by username, " +
-            "TUMBLE(watermark_col, INTERVAL '10' SECOND)";
+            "TUMBLE(watermark_col, INTERVAL '60' SECOND)";
 
     private static SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
 
     public static void main(String[] args) throws Exception {
-        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        Configuration configuration = new Configuration();
+        configuration.setString("state.checkpoints.num-retained", "10");
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(configuration);
         env.setParallelism(1);
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
-        SingleOutputStreamOperator<Row> sourceStream = env.addSource(new UrlClickRowDataSource()).returns(USER_CLICK_TYPEINFO);
-        SingleOutputStreamOperator<Row> streamWithWatermark = sourceStream.assignTimestampsAndWatermarks(new AscendingTimestampExtractor<Row>() {
-            @Override
-            public long extractAscendingTimestamp(Row element) {
-                return Timestamp.valueOf(element.getField(3).toString()).getTime();
-            }
-        });
-        CacheStreamFunction cacheStreamFunction = new CacheStreamFunction("userId", (RowTypeInfo) USER_CLICK_TYPEINFO);
-        SingleOutputStreamOperator<Row> cacheStream = streamWithWatermark.keyBy(0).process(cacheStreamFunction);
+        //checkpoint config
+        env.enableCheckpointing(1000 * 5);
+        env.getCheckpointConfig().setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE);
+        env.getCheckpointConfig().setMinPauseBetweenCheckpoints(500);
+        env.getCheckpointConfig().setCheckpointTimeout(1000 * 10);
+        env.getCheckpointConfig().setMaxConcurrentCheckpoints(10);
+        env.getCheckpointConfig().enableExternalizedCheckpoints(
+                CheckpointConfig.ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION);
+        env.setStateBackend((StateBackend) new FsStateBackend("file:///tmp/flink/checkpints"));
+
+        SingleOutputStreamOperator<Row> sourceStream = env
+                .addSource(new UrlClickRowDataSource())
+                .returns(USER_CLICK_TYPEINFO)
+                .setParallelism(10)
+                .name("Dummy Source");
+
+        SingleOutputStreamOperator<Row> streamWithWatermark = sourceStream
+                .assignTimestampsAndWatermarks(new AscendingTimestampExtractor<Row>() {
+                    @Override
+                    public long extractAscendingTimestamp(Row element) {
+                        return Timestamp.valueOf(element.getField(3).toString()).getTime();
+                    }
+                });
+        CacheStreamFunction cacheStreamFunction = new CacheStreamFunction("username", (RowTypeInfo) USER_CLICK_TYPEINFO);
+        SingleOutputStreamOperator<Row> cacheStream = streamWithWatermark
+                .keyBy(1)
+                .process(cacheStreamFunction);
 
         cacheStream.printToErr();
 
